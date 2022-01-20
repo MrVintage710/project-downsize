@@ -1,3 +1,8 @@
+mod render;
+
+use glow::*;
+use crate::render::createGlutinContext;
+
 fn main() {
-    println!("Hello, world!");
+    let (gl, shader_version, window, event_loop) = createGlutinContext();
 }

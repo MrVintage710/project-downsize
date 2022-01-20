@@ -4,24 +4,18 @@
 use glow::*;
 
 pub struct VBO {
-
+    buffer : NativeBuffer
 }
 
 impl VBO {
-
-    pub fn new() {
-        let event_loop = glutin::event_loop::EventLoop::new();
-
-        let gl = glutin::ContextBuilder::new()
-            .build_headless(&event_loop, glutin::dpi::PhysicalSize::new(32, 32))
-            .expect("There was an error creating the context");
-
+    pub fn new(gl : &Context) -> Result<Self, String> {
         unsafe {
-            let gl = gl.make_current().expect("Test");
-
-            let gl = glow::Context::from_loader_function(|s| gl.get_proc_address(s) as *const _);
-
+            let buffer = gl.create_buffer()?;
+            Ok(VBO { buffer })
         }
     }
 
+    pub fn load_int3(&self, gl : &Context, ) {
+
+    }
 }

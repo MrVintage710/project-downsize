@@ -10,6 +10,18 @@ pub trait Renderable {
     fn render(gl : Context);
 }
 
+//Test Format if need be
+// #[cfg(test)]
+// mod render_tests{
+//     use super::*;
+//
+//     #[test]
+//     fn testCreateGlutinContext() {
+//
+//     }
+// }
+
+
 pub fn createGlutinContext<'a>() -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
     unsafe {
         let event_loop = glutin::event_loop::EventLoop::new();
@@ -28,8 +40,8 @@ pub fn createGlutinContext<'a>() -> (Context, &'a str, ContextWrapper<PossiblyCu
     }
 }
 
-pub fn createHeadlessContext() {
+pub fn createSurfacelessContext() {
     unsafe {
-
+       //todo create a surfaceless context
     }
 }

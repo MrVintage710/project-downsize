@@ -10,7 +10,7 @@ pub trait Renderable {
     fn render(gl : Context);
 }
 
-pub fn createGlutinContext() -> (Context, &str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
+pub fn createGlutinContext<'a>() -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
     unsafe {
         let event_loop = glutin::event_loop::EventLoop::new();
         let window_builder = glutin::window::WindowBuilder::new()
@@ -25,5 +25,11 @@ pub fn createGlutinContext() -> (Context, &str, ContextWrapper<PossiblyCurrent, 
         let gl =
             glow::Context::from_loader_function(|s| window.get_proc_address(s) as *const _);
         (gl, "#version 410", window, event_loop)
+    }
+}
+
+pub fn createHeadlessContext() {
+    unsafe {
+
     }
 }

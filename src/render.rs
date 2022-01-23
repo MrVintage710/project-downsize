@@ -5,28 +5,29 @@ use glutin::{ContextWrapper, PossiblyCurrent};
 
 pub mod frame;
 pub mod buffer;
+pub mod shader;
 
 pub trait Renderable {
-    fn render(gl : Context);
+    fn render(&self, gl : &Context);
 }
 
 //Test Format if need be
-// #[cfg(test)]
-// mod render_tests{
-//     use super::*;
-//
-//     #[test]
-//     fn testCreateGlutinContext() {
-//
-//     }
-// }
+#[cfg(test)]
+mod render_tests{
+    use super::*;
+
+    #[test]
+    fn testCreateGlutinContext() {
+
+    }
+}
 
 
-pub fn createGlutinContext<'a>() -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
+pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
     unsafe {
         let event_loop = glutin::event_loop::EventLoop::new();
         let window_builder = glutin::window::WindowBuilder::new()
-            .with_title("Hello triangle!")
+            .with_title(title)
             .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
         let window = glutin::ContextBuilder::new()
             .with_vsync(true)

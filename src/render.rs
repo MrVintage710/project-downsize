@@ -8,16 +8,13 @@ pub mod buffer;
 pub mod shader;
 
 pub trait Renderable {
-    fn render(&self, gl : &Context);
-}
+    unsafe fn render(&self, gl : &Context);
 
-//Test Format if need be
-#[cfg(test)]
-mod render_tests{
-    use super::*;
+    unsafe fn pre_render(&self, gl : &Context) {
 
-    #[test]
-    fn testCreateGlutinContext() {
+    }
+
+    unsafe fn post_order(&self, gl : &Context) {
 
     }
 }

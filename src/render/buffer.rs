@@ -72,7 +72,7 @@ impl VBO {
             self.bind(gl);
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, data, glow::STATIC_DRAW);
             self.set_type::<T>();
-            self.amount = 1;
+            self.amount = 3;
         }
     }
 
@@ -177,7 +177,9 @@ impl VBO {
 ///VAO implementation. Should handle all of the memory management for me.
 pub struct VAO {
     array: NativeVertexArray,
-    enabled_attribs : BitFlag16
+    enabled_attribs : BitFlag16,
+    element_array : bool,
+    render_count : u32
 }
 
 impl VAO {
@@ -185,7 +187,7 @@ impl VAO {
         unsafe {
             let vao = gl.create_vertex_array()?;
             println!("MAX ATTRIBS: {}", gl.get_parameter_i32(MAX_VERTEX_ATTRIBS));
-            Ok(VAO { array : vao, enabled_attribs : BitFlag16::new() })
+            Ok(VAO { array : vao, enabled_attribs : BitFlag16::new() , element_array : false , render_count : 0 })
         }
     }
 
@@ -208,7 +210,7 @@ impl VAO {
         }
     }
 
-    pub fn addIndexBuffer(&self, gl : &Context, indices : Vec<i32>) {
+    pub fn addIndexBuffer(&mut self, gl : &Context, indices : Vec<i32>) {
         self.bind(gl);
         unsafe {
             let index_buffer = gl.create_buffer().expect("Cannot create Index Buffer.");
@@ -217,7 +219,27 @@ impl VAO {
                 indices.as_ptr() as *const u8,
                 indices.len() * core::mem::size_of::<i32>()
             );
-            gl.buffer_data_u8_slice(ELEMENT_ARRAY_BUFFER, data, STATIC_DRAW)
+            gl.buffer_data_u8_slice(ELEMENT_ARRAY_BUFFER, data, STATIC_DRAW);
+            self.element_array = true;
+            self.render_count = indices.len() as u32;
+        }
+    }
+}
+
+impl Renderable for VAO {
+    unsafe fn pre_render(&self, gl: &Context) {
+        for i in 0..BitFlag16::max() {
+            if self.enabled_attribs.is_marked(i) {
+                gl.enable_vertex_attrib_array(i as u32)
+            }
+        }
+    }
+
+    unsafe fn render(&self, gl: &Context) {
+        if self.element_array {
+            gl.draw_elements(TRIANGLES, self.render_count as i32, UNSIGNED_INT, 0)
+        } else {
+            gl.draw_arrays(TRIANGLES, 0, self.render_count as i32)
         }
     }
 }

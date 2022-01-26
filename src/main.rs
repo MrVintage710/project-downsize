@@ -31,7 +31,7 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    render::disable_shader_program(&gl);
+    program.bind(&gl);
     vao.bind(&gl);
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;

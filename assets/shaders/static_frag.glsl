@@ -1,5 +1,9 @@
 #version 410
 
-void main() {
+out vec4 frag_color;
 
+in vec4 vertex_color;
+
+void main() {
+    frag_color = vertex_color;
 }

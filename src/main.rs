@@ -8,6 +8,7 @@ use crate::render::buffer::VAO;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use crate::render::shader::ShaderProgram;
+use std::time::SystemTime;
 
 fn main() -> Result<(), String> {
     let (gl, shader_version, window, event_loop) = createGlutinContext("Hello Triangle!");
@@ -26,13 +27,19 @@ fn main() -> Result<(), String> {
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);
     vao.add_vbo(&gl ,0, &vbo);
 
-    let program = ShaderProgram::new(&gl)?;
+    let mut program = ShaderProgram::new(&gl)?;
     program.load_vertex_shader(&gl, "static_vert.glsl");
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
+    program.create_uniform_vec3(&gl, "color_shift", Vector3::new(-0.1, -0.1, -0.1));
+
     program.bind(&gl);
     vao.bind(&gl);
+
+    let start = SystemTime::now();
+    let mut last = SystemTime::now();
+
     event_loop.run(move |event, _, control_flow| {
         *control_flow = ControlFlow::Wait;
         match event {
@@ -59,6 +66,9 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
+                    let total_time = start.elapsed().expect("Timing error").as_secs_f32();
+                    program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
+
                     gl.clear(glow::COLOR_BUFFER_BIT);
                     vao.pre_render(&gl);
                     vao.render(&gl);

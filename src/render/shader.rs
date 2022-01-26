@@ -1,9 +1,12 @@
-use glow::{Context, HasContext, NativeProgram, VERTEX_SHADER, FRAGMENT_SHADER};
+use glow::{Context, HasContext, NativeProgram, VERTEX_SHADER, FRAGMENT_SHADER, NativeUniformLocation};
 use std::ops::Add;
 use std::fs;
+use cgmath::Vector3;
+use std::collections::HashMap;
 
 pub struct ShaderProgram {
     program : NativeProgram,
+    uniforms : HashMap<String, NativeUniformLocation>
 }
 
 impl ShaderProgram {
@@ -11,7 +14,7 @@ impl ShaderProgram {
     pub fn new(gl : &Context) -> Result<Self, String> {
         unsafe {
             let program = gl.create_program()?;
-            Ok(ShaderProgram{ program })
+            Ok(ShaderProgram{ program, uniforms : HashMap::new() })
         }
     }
 
@@ -36,6 +39,29 @@ impl ShaderProgram {
     pub fn bind(&self, gl : &Context) {
         unsafe {
             gl.use_program(Some(self.program))
+        }
+    }
+
+    pub fn create_uniform_vec3(&mut self, gl : &Context, name : &str, vec : Vector3<f32>) {
+        unsafe {
+            self.bind(gl);
+            let uniform = gl.get_uniform_location(self.program, name);
+            if uniform.is_none() { panic!("Unable to create shader location '{}'", name)}
+            let uniform = uniform.unwrap();
+            gl.uniform_3_f32(Some(&uniform), vec.x, vec.y, vec.z);
+
+            self.uniforms.insert(name.to_string(), uniform);
+        }
+    }
+
+    pub fn uniform_vec3(&self, gl : &Context, name : &str, vec : Vector3<f32>) {
+        unsafe {
+            self.bind(gl);
+            if self.uniforms.contains_key(name) {
+                gl.uniform_3_f32(self.uniforms.get(name), vec.x, vec.y, vec.z)
+            } else {
+                panic!("There is no shader uniform with name '{}'", name)
+            }
         }
     }
 

@@ -1,4 +1,4 @@
-use glow::Context;
+use glow::{Context, HasContext};
 use glutin::window::Window;
 use glutin::event_loop::EventLoop;
 use glutin::{ContextWrapper, PossiblyCurrent};
@@ -18,7 +18,6 @@ pub trait Renderable {
 
     }
 }
-
 
 pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
     unsafe {
@@ -41,5 +40,11 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
 pub fn createSurfacelessContext() {
     unsafe {
        //todo create a surfaceless context
+    }
+}
+
+pub fn disable_shader_program(gl : &Context) {
+    unsafe {
+        gl.use_program(None)
     }
 }

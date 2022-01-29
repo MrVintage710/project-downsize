@@ -13,6 +13,8 @@ use std::time::SystemTime;
 fn main() -> Result<(), String> {
     let (gl, shader_version, window, event_loop) = createGlutinContext("Hello Triangle!");
 
+    let mut egui_glow = egui_glow::EguiGlow::new(&window, &gl);
+
     let verts : Vec<Vector3<f32>> = vec![
         Vector3::new(-0.5, 0.5, 0.0),
         Vector3::new(0.5, 0.5,0.0),
@@ -40,8 +42,18 @@ fn main() -> Result<(), String> {
     let start = SystemTime::now();
     let mut last = SystemTime::now();
 
+    let mut clear_color = [0.1, 0.1, 0.1];
+
     event_loop.run(move |event, _, control_flow| {
-        *control_flow = ControlFlow::Wait;
+        let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
+            egui::SidePanel::left("side_panel").show(egui_ctx, |ui| {
+                ui.heading("Hello World!");
+                if ui.button("Quit").clicked() {
+                    println!("Quit")
+                }
+            });
+        });
+
         match event {
             Event::NewEvents(_) => {}
             Event::WindowEvent { ref event, .. } => match event {
@@ -66,10 +78,12 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
+
                     let total_time = start.elapsed().expect("Timing error").as_secs_f32();
                     program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
 
                     gl.clear(glow::COLOR_BUFFER_BIT);
+                    egui_glow.paint(&window, &gl, list);
                     vao.pre_render(&gl);
                     vao.render(&gl);
                     window.swap_buffers().unwrap();

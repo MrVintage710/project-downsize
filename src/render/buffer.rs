@@ -4,7 +4,7 @@
 use glow::*;
 use cgmath::{Vector3, Vector2, Vector4};
 use std::any::TypeId;
-use crate::render::Renderable;
+use crate::render::{Renderable, Destroyable};
 use crate::util::bitflag::BitFlag16;
 
 ///This is a functional Wrapping of a vbo. This should have all the functions required to create and manage memory in a vbo
@@ -171,6 +171,12 @@ impl VBO {
         }
 
         return NONE;
+    }
+}
+
+impl Destroyable for VBO {
+    unsafe fn destroy(self, gl: &Context) {
+        gl.delete_buffer(self.buffer)
     }
 }
 

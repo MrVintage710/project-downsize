@@ -19,6 +19,10 @@ pub trait Renderable {
     }
 }
 
+pub trait Destroyable {
+    unsafe fn destroy(self, gl : &Context);
+}
+
 pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
     unsafe {
         let event_loop = glutin::event_loop::EventLoop::with_user_event();
@@ -26,9 +30,7 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
             .with_title(title)
             .with_inner_size(glutin::dpi::LogicalSize::new(1024.0, 768.0));
         let window = glutin::ContextBuilder::new()
-            .with_depth_buffer(0)
             .with_srgb(true)
-            .with_stencil_buffer(0)
             .with_vsync(true)
             .build_windowed(window_builder, &event_loop)
             .unwrap()
@@ -36,9 +38,12 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
             .unwrap();
 
         let gl =
-            glow::Context::from_loader_function(|s| window.get_proc_address(s) as *const _);
+            glow::Context::from_loader_function(|s| window.get_proc_address(s));
 
-        gl.enable(FRAMEBUFFER_SRGB);
+        {
+            use glow::HasContext as _;
+            gl.enable(glow::FRAMEBUFFER_SRGB);
+        }
 
         (gl, "#version 410", window, event_loop)
     }

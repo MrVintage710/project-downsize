@@ -36,7 +36,6 @@ fn main() -> Result<(), String> {
 
     program.create_uniform_vec3(&gl, "color_shift", Vector3::new(-0.1, -0.1, -0.1));
 
-    program.bind(&gl);
     vao.bind(&gl);
 
     let start = SystemTime::now();
@@ -44,30 +43,32 @@ fn main() -> Result<(), String> {
 
     let mut clear_color = [0.1, 0.1, 0.1];
 
+    unsafe {
+        gl.debug_message_callback(|m, e, s, u, message| {println!("{}", message)})
+    }
+
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
-            egui::SidePanel::left("side_panel").show(egui_ctx, |ui| {
-                ui.heading("Hello World!");
-                if ui.button("Quit").clicked() {
-                    println!("Quit")
-                }
-            });
+
         });
 
         match event {
             Event::NewEvents(_) => {}
-            Event::WindowEvent { ref event, .. } => match event {
-                WindowEvent::Resized(physical_size) => {
-                    window.resize(*physical_size);
-                    unsafe { gl.viewport(0, 0, physical_size.width as i32, physical_size.height as i32); }
-                }
-                WindowEvent::CloseRequested => {
-                    unsafe {
-                        *control_flow = ControlFlow::Exit
+            Event::WindowEvent { ref event, .. } => {
+                egui_glow.on_event(&event);
+                match event {
+                    WindowEvent::Resized(physical_size) => {
+                        window.resize(*physical_size);
+                        unsafe { gl.viewport(0, 0, physical_size.width as i32, physical_size.height as i32); }
                     }
+                    WindowEvent::CloseRequested => {
+                        unsafe {
+                            *control_flow = ControlFlow::Exit
+                        }
 
+                    }
+                    _ => (),
                 }
-                _ => (),
             },
             Event::DeviceEvent { .. } => {}
             Event::UserEvent(_) => {}
@@ -80,17 +81,25 @@ fn main() -> Result<(), String> {
                 unsafe {
 
                     let total_time = start.elapsed().expect("Timing error").as_secs_f32();
+                    program.bind(&gl);
                     program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
 
                     gl.clear(glow::COLOR_BUFFER_BIT);
-                    egui_glow.paint(&window, &gl, list);
                     vao.pre_render(&gl);
                     vao.render(&gl);
+
+                    if gl.get_error() != NO_ERROR {
+                        println!("Error! {:?}", gl.get_debug_message_log(1024))
+                    }
+
+                    if test {egui_glow.paint(&window, &gl, list)}
                     window.swap_buffers().unwrap();
                 }
             }
             Event::RedrawEventsCleared => {}
-            Event::LoopDestroyed => {}
+            Event::LoopDestroyed => {
+                egui_glow.destroy(&gl)
+            }
         }
     });
 

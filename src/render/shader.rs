@@ -28,7 +28,6 @@ impl ShaderProgram {
 
     pub fn link(&self, gl : &Context) {
         unsafe {
-            self.bind(gl);
             gl.link_program(self.program);
             if !gl.get_program_link_status(self.program) {
                 panic!("Unable to link shader program.")
@@ -67,8 +66,6 @@ impl ShaderProgram {
 
     fn load_shader(&self, gl : &Context, file_name : &str, shader_type : u32) -> Result<(), String> {
         unsafe {
-            self.bind(gl);
-
             let vs = gl.create_shader(shader_type)?;
             let filepath = String::from("assets/shaders/").add(file_name);
             let data = fs::read_to_string(filepath.as_str()).expect("Could not find file.");

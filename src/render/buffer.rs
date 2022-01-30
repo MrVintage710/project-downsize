@@ -234,6 +234,7 @@ impl VAO {
 
 impl Renderable for VAO {
     unsafe fn pre_render(&self, gl: &Context) {
+        self.bind(&gl);
         for i in 0..BitFlag16::max() {
             if self.enabled_attribs.is_marked(i) {
                 gl.enable_vertex_attrib_array(i as u32)

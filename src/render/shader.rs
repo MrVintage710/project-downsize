@@ -107,7 +107,12 @@ impl ShaderProgram {
 impl Destroyable for ShaderProgram {
     unsafe fn destroy(&self, gl: &Context) {
         unsafe {
-            //gl.delete_shader()
+            for i in 0..4 {
+                let shader = self.shaders[i];
+                if shader.is_some() {gl.delete_shader(shader.unwrap())}
+            }
+
+            gl.delete_program(self.program)
         }
     }
 }

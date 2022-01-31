@@ -32,21 +32,7 @@ pub trait Destroyable {
 }
 
 pub trait Debugable {
-
-}
-
-pub trait RenderGroup {
-    fn has_renderable(&self) -> bool { false }
-
-    fn get_Renderable(&self) -> Option<Box<dyn Renderable>> { None }
-
-    fn has_debugable(&self) -> bool { false }
-
-    fn get_debugable(&self) -> Option<Box<dyn Debugable>> { None }
-
-    fn has_destroyable(&self) -> bool { false }
-
-    fn get_destroyable(&self) -> Option<Box<dyn Destroyable>> { None }
+    
 }
 
 pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {

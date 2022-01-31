@@ -66,13 +66,10 @@ fn main() {
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);
     vao.add_vbo(&gl ,0, &vbo);
 
-    let program = ShaderProgram::new(&gl).expect("Shader unable to be Created.");
+    let mut program = ShaderProgram::new(&gl).expect("Shader unable to be Created.");
     program.load_vertex_shader(&gl, "static_vert.glsl");
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
-    //
-    // render::disable_shader_program(&gl);
-    vao.bind(&gl);
 
     event_loop.run(move |event, _, control_flow| {
         let mut redraw = || {
@@ -80,6 +77,10 @@ fn main() {
 
             let (needs_repaint, list) = egui_glow.run(gl_window.window(), |egui_ctx| {
                 egui::SidePanel::left("my_side_panel").show(egui_ctx, |ui| {
+                    ui.collapsing("Test", |ui|{
+                        ui.label("Found Me!")
+                    });
+
                     ui.heading("Hello World!");
                     if ui.button("Quit").clicked() {
                         quit = true;
@@ -105,14 +106,7 @@ fn main() {
                 }
 
                 program.bind(&gl);
-                unsafe {vao.pre_render(&gl); vao.render(&gl)}
-
-                // draw things behind egui here
-                unsafe {
-                    for log in gl.get_debug_message_log(1024) {
-                        println!("{:?}", log)
-                    }
-                }
+                render::render(&gl, &vao);
 
                 egui_glow.paint(&gl_window, &gl, list);
 
@@ -146,6 +140,11 @@ fn main() {
             }
             glutin::event::Event::LoopDestroyed => {
                 egui_glow.destroy(&gl);
+                unsafe {
+                    vao.destroy(&gl);
+                    vbo.destroy(&gl);
+                }
+
             }
 
             _ => (),

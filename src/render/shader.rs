@@ -1,29 +1,51 @@
-use glow::{Context, HasContext, NativeProgram, VERTEX_SHADER, FRAGMENT_SHADER, NativeUniformLocation};
+use glow::{Context, HasContext, NativeProgram, VERTEX_SHADER, FRAGMENT_SHADER, NativeUniformLocation, NativeShader};
 use std::ops::Add;
 use std::fs;
 use cgmath::Vector3;
 use std::collections::HashMap;
+use crate::render::Destroyable;
+
+const VERTEX_SHADER_INDEX : usize = 0;
+const FRAGMENT_SHADER_INDEX : usize = 1;
+const GEOMETRY_SHADER_INDEX : usize = 2;
+const TESSELATION_SHADER_INDEX: usize = 3;
 
 pub struct ShaderProgram {
     program : NativeProgram,
-    uniforms : HashMap<String, NativeUniformLocation>
+    uniforms : HashMap<String, NativeUniformLocation>,
+    shaders : [Option<NativeShader>; 4]
 }
 
 impl ShaderProgram {
-
     pub fn new(gl : &Context) -> Result<Self, String> {
         unsafe {
             let program = gl.create_program()?;
-            Ok(ShaderProgram{ program, uniforms : HashMap::new() })
+            Ok(ShaderProgram{ program, uniforms : HashMap::new(), shaders: [None; 4] })
         }
     }
 
-    pub fn load_vertex_shader(&self, gl : &Context, file_name : &str) -> Result<(), String> {
-        self.load_shader(gl, file_name, VERTEX_SHADER)
+    pub fn load_vertex_shader(&mut self, gl : &Context, file_name : &str) -> Result<(), String> {
+        let shader = self.load_shader(gl, file_name, VERTEX_SHADER)?;
+        self.shaders[VERTEX_SHADER_INDEX] = Some(shader);
+        Ok(())
     }
 
-    pub fn load_fragment_shader(&self, gl : &Context, file_name : &str) -> Result<(), String> {
-        self.load_shader(gl, file_name, FRAGMENT_SHADER)
+    pub fn has_vert_shader(&self) -> bool {
+        self.shaders[VERTEX_SHADER_INDEX].is_some()
+    }
+
+    pub fn get_vert_shader(&self) -> Option<NativeShader> {
+        self.shaders[VERTEX_SHADER_INDEX]
+    }
+
+    pub fn load_fragment_shader(&mut self, gl : &Context, file_name : &str) -> Result<(), String> {
+        let shader = self.load_shader(gl, file_name, FRAGMENT_SHADER)?;
+        self.shaders[FRAGMENT_SHADER_INDEX] = Some(shader);
+        Ok(())
+    }
+
+    pub fn has_fragment_shader(&self) -> bool {
+        self.shaders[FRAGMENT_SHADER_INDEX].is_some()
     }
 
     pub fn link(&self, gl : &Context) {
@@ -64,20 +86,28 @@ impl ShaderProgram {
         }
     }
 
-    fn load_shader(&self, gl : &Context, file_name : &str, shader_type : u32) -> Result<(), String> {
+    fn load_shader(&self, gl : &Context, file_name : &str, shader_type : u32) -> Result<NativeShader, String> {
         unsafe {
-            let vs = gl.create_shader(shader_type)?;
+            let shader = gl.create_shader(shader_type)?;
             let filepath = String::from("assets/shaders/").add(file_name);
             let data = fs::read_to_string(filepath.as_str()).expect("Could not find file.");
-            gl.shader_source(vs, data.as_str());
-            gl.compile_shader(vs);
+            gl.shader_source(shader, data.as_str());
+            gl.compile_shader(shader);
 
-            if !gl.get_shader_compile_status(vs) {
-                panic!("{}", gl.get_shader_info_log(vs))
+            if !gl.get_shader_compile_status(shader) {
+                return Err(gl.get_shader_info_log(shader))
             }
 
-            gl.attach_shader(self.program, vs);
-            Ok(())
+            gl.attach_shader(self.program, shader);
+            Ok(shader)
+        }
+    }
+}
+
+impl Destroyable for ShaderProgram {
+    unsafe fn destroy(&self, gl: &Context) {
+        unsafe {
+            //gl.delete_shader()
         }
     }
 }

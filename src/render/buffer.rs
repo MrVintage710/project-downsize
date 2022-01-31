@@ -175,7 +175,7 @@ impl VBO {
 }
 
 impl Destroyable for VBO {
-    unsafe fn destroy(self, gl: &Context) {
+    unsafe fn destroy(&self, gl: &Context) {
         gl.delete_buffer(self.buffer)
     }
 }
@@ -248,6 +248,25 @@ impl Renderable for VAO {
         } else {
             gl.draw_arrays(TRIANGLES, 0, self.render_count as i32)
         }
+    }
+
+    unsafe fn post_render(&self, gl: &Context) {
+        for i in 0..BitFlag16::max() {
+            if self.enabled_attribs.is_marked(i) {
+                gl.disable_vertex_attrib_array(i as u32)
+            }
+        }
+    }
+}
+
+impl Destroyable for VAO {
+    unsafe fn destroy(&self, gl: &Context) {
+        for i in 0..BitFlag16::max() {
+            if self.enabled_attribs.is_marked(i) {
+                gl.disable_vertex_attrib_array(i as u32)
+            }
+        }
+        gl.delete_vertex_array(self.array)
     }
 }
 

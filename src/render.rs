@@ -2,37 +2,36 @@ use glow::{Context, HasContext, FRAMEBUFFER_SRGB};
 use glutin::window::Window;
 use glutin::event_loop::EventLoop;
 use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext};
+use egui::Ui;
 
 pub mod frame;
 pub mod buffer;
 pub mod shader;
 
-pub trait Renderable {
-    unsafe fn render(&self, gl : &Context);
+///----------------------------- Render Context -------------------------------
 
-    unsafe fn pre_render(&self, gl : &Context) {
-
-    }
-
-    unsafe fn post_render(&self, gl : &Context) {
-
-    }
+pub struct RenderContext {
+    gl : 
 }
 
-pub fn render<T>(gl : &Context, renderable : &T) where T : Renderable {
+pub trait Drawable {
+    unsafe fn render(&self, gl : &Context);
+
+    unsafe fn destroy(&self, gl : &Context);
+
+    unsafe fn pre_render(&self, gl : &Context) {}
+
+    unsafe fn post_render(&self, gl : &Context) {}
+
+    fn debug(&mut self, ui : &mut Ui) {}
+}
+
+pub fn render<T>(gl : &Context, drawable : &T) where T : Drawable {
     unsafe {
         renderable.pre_render(gl);
         renderable.render(gl);
         renderable.post_render(gl);
     }
-}
-
-pub trait Destroyable {
-    unsafe fn destroy(&self, gl : &Context);
-}
-
-pub trait Debugable {
-    
 }
 
 pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {

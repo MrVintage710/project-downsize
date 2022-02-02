@@ -9,42 +9,6 @@ use crate::render::buffer::{VBO, VAO};
 use crate::render::shader::ShaderProgram;
 use egui_glow::glow::HasContext;
 
-fn create_display(
-    event_loop: &glutin::event_loop::EventLoop<()>,
-) -> (
-    glutin::WindowedContext<glutin::PossiblyCurrent>,
-    glow::Context,
-) {
-    let window_builder = glutin::window::WindowBuilder::new()
-        .with_resizable(true)
-        .with_inner_size(glutin::dpi::LogicalSize {
-            width: 800.0,
-            height: 600.0,
-        })
-        .with_title("egui_glow example");
-
-    let gl_window = unsafe {
-        glutin::ContextBuilder::new()
-            .with_depth_buffer(0)
-            .with_srgb(true)
-            .with_stencil_buffer(0)
-            .with_vsync(true)
-            .build_windowed(window_builder, event_loop)
-            .unwrap()
-            .make_current()
-            .unwrap()
-    };
-
-    let gl = unsafe { glow::Context::from_loader_function(|s| gl_window.get_proc_address(s)) };
-
-    unsafe {
-        use glow::HasContext as _;
-        gl.enable(glow::FRAMEBUFFER_SRGB);
-    }
-
-    (gl_window, gl)
-}
-
 fn main() {
     let mut clear_color = [0.1, 0.1, 0.1];
 
@@ -106,7 +70,6 @@ fn main() {
                 }
 
                 program.bind(&gl);
-                render::render(&gl, &vao);
 
                 egui_glow.paint(&gl_window, &gl, list);
 
@@ -140,10 +103,7 @@ fn main() {
             }
             glutin::event::Event::LoopDestroyed => {
                 egui_glow.destroy(&gl);
-                unsafe {
-                    vao.destroy(&gl);
-                    vbo.destroy(&gl);
-                }
+                unsafe { vao.destroy(&gl); }
 
             }
 

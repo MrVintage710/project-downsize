@@ -4,7 +4,7 @@
 use glow::*;
 use cgmath::{Vector3, Vector2, Vector4};
 use std::any::TypeId;
-use crate::render::{Drawable, Destroyable};
+use crate::render::{Drawable};
 use crate::util::bitflag::BitFlag16;
 
 ///This is a functional Wrapping of a vbo. This should have all the functions required to create and manage memory in a vbo
@@ -224,41 +224,35 @@ impl VAO {
             self.render_count = indices.len() as u32;
         }
     }
-}
 
-impl Drawable for VAO {
-    unsafe fn render(&self, gl: &Context) {
-        if self.element_array {
-            gl.draw_elements(TRIANGLES, self.render_count as i32, UNSIGNED_INT, 0)
-        } else {
-            gl.draw_arrays(TRIANGLES, 0, self.render_count as i32)
-        }
-    }
-
-    unsafe fn destroy(&self, gl: &Context) {
-        for i in 0..BitFlag16::max() {
-            if self.enabled_attribs.is_marked(i) {
-                gl.disable_vertex_attrib_array(i as u32)
-            }
-        }
-        gl.delete_vertex_array(self.array)
-    }
-
-    unsafe fn pre_render(&self, gl: &Context) {
+    pub unsafe fn render(&self, gl : &Context) {
         self.bind(&gl);
         for i in 0..BitFlag16::max() {
             if self.enabled_attribs.is_marked(i) {
                 gl.enable_vertex_attrib_array(i as u32)
             }
         }
-    }
 
-    unsafe fn post_render(&self, gl: &Context) {
+        if self.element_array {
+            gl.draw_elements(TRIANGLES, self.render_count as i32, UNSIGNED_INT, 0)
+        } else {
+            gl.draw_arrays(TRIANGLES, 0, self.render_count as i32)
+        }
+
         for i in 0..BitFlag16::max() {
             if self.enabled_attribs.is_marked(i) {
                 gl.disable_vertex_attrib_array(i as u32)
             }
         }
+    }
+
+    pub unsafe fn destroy(&self, gl: &Context) {
+        for i in 0..BitFlag16::max() {
+            if self.enabled_attribs.is_marked(i) {
+                gl.disable_vertex_attrib_array(i as u32)
+            }
+        }
+        gl.delete_vertex_array(self.array)
     }
 }
 

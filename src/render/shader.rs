@@ -3,7 +3,6 @@ use std::ops::Add;
 use std::fs;
 use cgmath::Vector3;
 use std::collections::HashMap;
-use crate::render::Destroyable;
 
 const VERTEX_SHADER_INDEX : usize = 0;
 const FRAGMENT_SHADER_INDEX : usize = 1;
@@ -63,6 +62,16 @@ impl ShaderProgram {
         }
     }
 
+    pub fn destroy(&self, gl : &Context) {
+        unsafe {
+            for shader in self.shaders {
+                if shader.is_some() { gl.delete_shader(shader.unwrap())}
+            }
+
+            gl.delete_program(self.program)
+        }
+    }
+
     pub fn create_uniform_vec3(&mut self, gl : &Context, name : &str, vec : Vector3<f32>) {
         unsafe {
             self.bind(gl);
@@ -100,19 +109,6 @@ impl ShaderProgram {
 
             gl.attach_shader(self.program, shader);
             Ok(shader)
-        }
-    }
-}
-
-impl Destroyable for ShaderProgram {
-    unsafe fn destroy(&self, gl: &Context) {
-        unsafe {
-            for i in 0..4 {
-                let shader = self.shaders[i];
-                if shader.is_some() {gl.delete_shader(shader.unwrap())}
-            }
-
-            gl.delete_program(self.program)
         }
     }
 }

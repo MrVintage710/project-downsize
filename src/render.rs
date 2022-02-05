@@ -9,6 +9,9 @@ use std::fmt::{Display, Formatter, Debug};
 use egui::epaint::ClippedShape;
 use glutin::event::WindowEvent;
 use crate::render::drawable::Drawable;
+use crate::util::*;
+use std::collections::HashMap;
+use std::any::TypeId;
 
 pub mod frame;
 pub mod buffer;
@@ -24,7 +27,8 @@ pub struct RenderContext {
     egui : EguiGlow,
     event_loop: EventLoop<()>,
     window: ContextWrapper<PossiblyCurrent, Window>,
-    render_list : Vec<RenderListElement>
+    drawables : HashMap<String, Box<dyn Drawable>>,
+    render_list : Vec<(u32, String)>
 }
 
 impl RenderContext {
@@ -37,6 +41,7 @@ impl RenderContext {
             egui,
             window,
             event_loop,
+            drawables : HashMap::new(),
             render_list : Vec::new()
         }
     }
@@ -49,8 +54,9 @@ impl RenderContext {
         let (should_render, list) = self.egui.run(self.window.window(), |egui_ctx| {
             egui::SidePanel::left("side_panel").show(egui_ctx, |ui|{
                 for rle in self.render_list.iter_mut() {
-                    ui.collapsing(rle.name.clone(), |ui| {
-                        rle.drawable.debug(ui);
+                    let mut drawable = self.drawables.get(&*rle.1).unwrap();
+                    ui.collapsing(&*rle.1, |ui| {
+                        drawable.debug(ui);
                     });
                 }
             });
@@ -64,19 +70,28 @@ impl RenderContext {
     pub fn render(&self) {
         unsafe {
             for rle in self.render_list.iter() {
-                rle.drawable.pre_render(&self.gl);
-                rle.drawable.render(&self.gl);
-                rle.drawable.post_render(&self.gl);
+                let drawable = self.drawables.get(&*rle.1).unwrap();
+
+                drawable.pre_render(&self.gl);
+                drawable.render(&self.gl);
+                drawable.post_render(&self.gl);
             }
         }
     }
 
-    pub fn add_drawable<T: 'static, F>(&mut self, creation_callback : F) where T: Drawable, F: FnOnce(&Context) -> (&str, u32, T) {
+    pub fn add_drawable<T: 'static, F>(&mut self, creation_callback : F) -> &Box<dyn Drawable> where T: Drawable, F: FnOnce(&Context) -> (&str, u32, T) {
         let (name, priority, drawable) = creation_callback(&self.gl);
 
-        let rle = RenderListElement{name : String::from(name), drawable : Box::new(drawable), priority};
-        self.render_list.push(rle);
-        self.render_list.sort();
+        self.drawables.insert(name.to_string(), Box::new(drawable));
+        self.render_list.push((priority, name.to_string()));
+        self.render_list.sort_by(|a, b| {a.0.cmp(&b.0)});
+        return self.drawables.get(name).unwrap();
+    }
+
+    pub fn mutate_drawable<T>(&mut self, name : &str, mutator : impl FnOnce(&mut T)) {
+        let b = self.drawables.get_mut(name).unwrap();
+        let test = b.as_any_mut().downcast_mut::<T>().unwrap();
+        mutator(test)
     }
 
     pub fn render_drawable<T>(&self, drawable : T) where T: Drawable {
@@ -90,7 +105,9 @@ impl RenderContext {
     pub fn destroy(&mut self) {
         unsafe {
             for rle in self.render_list.iter() {
-                rle.drawable.destroy(&self.gl);
+                let drawable = self.drawables.get(&*rle.1).unwrap();
+
+                drawable.destroy(&self.gl);
             }
 
             self.egui.destroy(&self.gl);

@@ -15,8 +15,8 @@ struct OBJModel {
 
 impl OBJModel {
     pub fn new(gl : &Context, model_filename : &str) -> Self {
-        let input = BufReader::new(File::open(format!("assets/models/{}", model_filename))?);
-        let o : Obj = load_obj(input)?;
+        let input = BufReader::new(File::open(format!("assets/models/{}", model_filename)).expect(""));
+        let o : Obj = load_obj(input).expect("Object could not load from file.");
 
         let mut vert_vbo = VBO::new(gl).expect("");
         let mut normal_vbo = VBO::new(gl).expect("");
@@ -36,7 +36,11 @@ impl OBJModel {
         vao.add_vbo(gl, 0, &vert_vbo);
         vao.add_vbo(gl, 1, &normal_vbo);
 
-        let shader_program =
+        let mut shader_program = ShaderProgram::new(gl).expect("Unable to make Shader Program.");
+        shader_program.load_vertex_shader(gl, "models/static_model_vert.glsl");
+        shader_program.load_fragment_shader(gl, "models/static_model_frag.glsl");
+
+        OBJModel {}
     }
 }
 
@@ -47,15 +51,5 @@ impl Drawable for OBJModel {
 
     unsafe fn destroy(&self, gl: &Context) {
         todo!()
-    }
-
-    unsafe fn init(&mut self, gl: &Context) -> Result<(), Box<dyn Error>> {
-
-
-
-
-
-
-        Ok(())
     }
 }

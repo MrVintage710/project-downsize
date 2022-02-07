@@ -3,7 +3,6 @@ use std::fs::File;
 use obj::{Obj, load_obj, ObjError};
 use crate::render::shader::ShaderProgram;
 use crate::render::buffer::{VBO, VAO};
-use crate::render::drawable::Drawable;
 use egui_glow::glow::Context;
 use std::error::Error;
 use crate::render::RenderContext;
@@ -41,15 +40,5 @@ impl OBJModel {
         shader_program.load_fragment_shader(gl, "models/static_model_frag.glsl");
 
         OBJModel {}
-    }
-}
-
-impl Drawable for OBJModel {
-    unsafe fn render(&self, gl: &Context) {
-        todo!()
-    }
-
-    unsafe fn destroy(&self, gl: &Context) {
-        todo!()
     }
 }

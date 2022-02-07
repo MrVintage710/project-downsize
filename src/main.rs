@@ -8,13 +8,16 @@ use cgmath::Vector3;
 use crate::render::buffer::{VBO, VAO};
 use crate::render::shader::ShaderProgram;
 use egui_glow::glow::HasContext;
+use anymap::AnyMap;
+use crate::render::generic::{GenericDrawable, GenericDebug};
 
 fn main() {
     let mut clear_color = [0.1, 0.1, 0.1];
 
-    let (gl, version, gl_window, event_loop) = render::createGlutinContext("Test");
+    let (window, event_loop) = render::createGlutinContext("Test");
+    let mut render_context = RenderContext::new(&window, &event_loop);
 
-    let mut egui_glow = egui_glow::EguiGlow::new(&gl_window, &gl);
+    let gl = &render_context.gl;
 
     let verts : Vec<Vector3<f32>> = vec![
         Vector3::new(-0.5, 0.5, 0.0),
@@ -35,49 +38,26 @@ fn main() {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
+    let generic_drawable = GenericDrawable::new(move |gl| unsafe {
+        program.bind(gl);
+        vao.render(gl);
+    });
+
+    let generic_debug = GenericDebug::new(|ui| {
+        ui.label("Test");
+    });
+
+    let rendergroup = RenderGroup::new("Test group".to_string(), 0)
+        .with_drawable(generic_drawable)
+        .with_debugable(generic_debug);
+
+    render_context.add_render_group(rendergroup);
+
     event_loop.run(move |event, _, control_flow| {
         let mut redraw = || {
-            let mut quit = false;
-
-            let (needs_repaint, list) = egui_glow.run(gl_window.window(), |egui_ctx| {
-                egui::SidePanel::left("my_side_panel").show(egui_ctx, |ui| {
-                    ui.collapsing("Test", |ui|{
-                        ui.label("Found Me!")
-                    });
-
-                    ui.heading("Hello World!");
-                    if ui.button("Quit").clicked() {
-                        quit = true;
-                    }
-                    ui.color_edit_button_rgb(&mut clear_color);
-                });
-            });
-
-            *control_flow = if quit {
-                glutin::event_loop::ControlFlow::Exit
-            } else if needs_repaint {
-                gl_window.window().request_redraw();
-                glutin::event_loop::ControlFlow::Poll
-            } else {
-                glutin::event_loop::ControlFlow::Wait
-            };
-
-            {
-                unsafe {
-                    use glow::HasContext as _;
-                    gl.clear_color(clear_color[0], clear_color[1], clear_color[2], 1.0);
-                    gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-                }
-
-                program.bind(&gl);
-
-                egui_glow.paint(&gl_window, &gl, list);
-
-                // draw things on top of egui here
-                //render::disable_shader_program(&gl);
-
-                gl_window.swap_buffers().unwrap();
-            }
+                render_context.render();
+                render_context.debug(&window);
+                window.swap_buffers().unwrap();
         };
 
         match event {
@@ -94,17 +74,15 @@ fn main() {
                 }
 
                 if let glutin::event::WindowEvent::Resized(physical_size) = event {
-                    gl_window.resize(physical_size);
+                    window.resize(physical_size);
                 }
 
-                egui_glow.on_event(&event);
+                render_context.on_event(&event);
 
-                gl_window.window().request_redraw(); // TODO: ask egui if the events warrants a repaint instead
+                window.window().request_redraw(); // TODO: ask egui if the events warrants a repaint instead
             }
             glutin::event::Event::LoopDestroyed => {
-                egui_glow.destroy(&gl);
-                unsafe { vao.destroy(&gl); }
-
+                render_context.destroy()
             }
 
             _ => (),

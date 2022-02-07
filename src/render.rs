@@ -24,7 +24,7 @@ pub mod test;
 pub struct RenderContext {
     pub gl : Context,
     egui : EguiGlow,
-    render_list : Vec<RenderGroup>
+    render_list : Vec<Box<dyn RenderPass>>
 }
 
 impl RenderContext {
@@ -92,10 +92,34 @@ impl RenderContext {
         }
     }
 
-    pub fn add_render_group(&mut self, render_group : RenderGroup) {
-        self.render_list.push(render_group);
-        self.render_list.sort();
+    pub fn add_render_group(&mut self, render_group : impl RenderPass) -> usize {
+        self.render_list.push(Box::new(render_group));
+        self.render_list.len() - 1
     }
+
+    pub fn get_render_group<T>(&self, index : usize) -> &T {
+
+        if TypeId::of::<T>() == self.render_list[index].as_any() {
+
+        }
+        &self.render_list[index]
+    }
+
+    pub fn get_render_group_mut(&mut self, index : usize) -> &mut RenderGroup {
+        &mut self.render_list[index]
+    }
+}
+
+pub enum RenderError {
+    ShaderError,
+}
+
+pub trait RenderPass {
+    unsafe fn draw(&self) -> Result<(), RenderError>;
+
+    fn debug(&mut self) -> Result<(), RenderError> { Ok(())  }
+
+    unsafe fn destroy(&self) -> Result<(), RenderError>;
 }
 
 pub struct RenderGroup {
@@ -173,7 +197,7 @@ impl Display for RenderGroup {
     }
 }
 
-pub trait Drawable {
+pub trait Drawable{
     unsafe fn render(&self, gl : &Context);
 }
 

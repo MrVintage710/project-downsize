@@ -1,5 +1,7 @@
 use crate::render::RenderGroup;
+use cgmath::Vector3;
 
-pub fn create_test() -> RenderGroup {
-
+struct TestRenderGroup {
+    color_shift: Vector3<f32>
 }
+

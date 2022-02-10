@@ -8,13 +8,9 @@ authors = ["Brooks Palin", "Kristoff Finnly"]
 
 [dependencies]
 glow = "0.11.2"
-image = { version = "0.23", default-features = false, features = ["png"] }
+image = "0.23.14"
 serde = "1.0.133"
 glutin = "0.28.0"
 cgmath = "0.18.0"
-egui = {version = "0.16.1", default-features = false, features = ["convert_bytemuck", "single_threaded"]}
+egui = "0.16.1"
 egui_glow = "0.16.0"
-bytemuck = "1.7"
-memoffset = "0.6"
-obj-rs = "0.7.0"
-anymap = "0.12.1"

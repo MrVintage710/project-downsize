@@ -109,7 +109,7 @@ impl VBO {
             self.bind(gl);
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, data, glow::STATIC_DRAW);
             self.set_type::<T>();
-            self.amount = 1;
+            self.grouping = 2;
         }
     }
 
@@ -130,7 +130,7 @@ impl VBO {
             self.bind(gl);
             gl.buffer_data_u8_slice(ARRAY_BUFFER, data, STATIC_DRAW);
             self.set_type::<T>();
-            self.grouping = 3;
+            self.grouping = 2;
         }
     }
 
@@ -161,7 +161,7 @@ impl VBO {
         }
     }
 
-    pub fn size(&self) -> u32 {
+    pub fn grouping(&self) -> u32 {
         self.grouping
     }
 
@@ -206,7 +206,7 @@ impl VAO {
         unsafe {
             self.bind(gl);
             vbo.bind(gl);
-            gl.vertex_attrib_pointer_f32(index as u32, vbo.size() as i32, vbo.data_type(), false, 0, 0)
+            gl.vertex_attrib_pointer_f32(index as u32, vbo.grouping() as i32, vbo.data_type(), false, 0, 0)
         }
     }
 

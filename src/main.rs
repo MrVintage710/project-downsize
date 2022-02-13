@@ -2,8 +2,8 @@ mod render;
 mod util;
 
 use glow::*;
-use crate::render::{createGlutinContext, buffer::VBO, Renderable};
-use cgmath::Vector3;
+use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
+use cgmath::{Vector3, Vector2};
 use crate::render::buffer::VAO;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
@@ -22,12 +22,23 @@ fn main() -> Result<(), String> {
         Vector3::new(0.5, -0.5, 0.0)
     ];
 
-    let mut vbo = VBO::new(&gl).unwrap();
-    vbo.load_vec3s(&gl, verts);
+    let uvs : Vec<Vector2<f32>> = vec![
+        Vector2::new(0.0, 0.0),
+        Vector2::new(1.0, 0.0),
+        Vector2::new(0.0, 1.0),
+        Vector2::new(1.0, 1.0)
+    ];
+
+    let mut vert_vbo = VBO::new(&gl).unwrap();
+    vert_vbo.load_vec3s(&gl, verts);
+
+    let mut uv_vbo = VBO::new(&gl)?;
+    uv_vbo.load_vec2s(&gl, uvs);
 
     let mut vao = VAO::new(&gl).unwrap();
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);
-    vao.add_vbo(&gl ,0, &vbo);
+    vao.add_vbo(&gl ,0, &vert_vbo);
+    vao.add_vbo(&gl, 1, &uv_vbo);
 
     let mut program = ShaderProgram::new(&gl)?;
     program.load_vertex_shader(&gl, "static_vert.glsl");
@@ -35,7 +46,9 @@ fn main() -> Result<(), String> {
     program.link(&gl);
 
     program.create_uniform_vec3(&gl, "color_shift", Vector3::new(-0.1, -0.1, -0.1));
+    let texture = Texture::new(&gl, "copper_block.png");
 
+    texture.bind(&gl);
     program.bind(&gl);
     vao.bind(&gl);
 
@@ -85,6 +98,8 @@ fn main() -> Result<(), String> {
                     program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
 
                     gl.clear(glow::COLOR_BUFFER_BIT);
+                    texture.bind(&gl);
+                    program.bind(&gl);
                     vao.pre_render(&gl);
                     vao.render(&gl);
                     egui_glow.paint(&window, &gl, list);

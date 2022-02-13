@@ -6,6 +6,8 @@ use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext};
 pub mod frame;
 pub mod buffer;
 pub mod shader;
+pub mod texture;
+//pub mod model;
 
 pub trait Renderable {
     unsafe fn render(&self, gl : &Context);

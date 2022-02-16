@@ -107,7 +107,9 @@ fn main() -> Result<(), String> {
                 }
             }
             Event::RedrawEventsCleared => {}
-            Event::LoopDestroyed => {}
+            Event::LoopDestroyed => {
+                egui_glow.destroy(&gl)
+            }
         }
     });
 

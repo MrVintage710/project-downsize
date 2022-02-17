@@ -45,7 +45,7 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    program.create_uniform_vec3(&gl, "color_shift", Vector3::new(-0.1, -0.1, -0.1));
+    //program.create_uniform_vec3(&gl, "color_shift", Vector3::new(-0.1, -0.1, -0.1));
     let texture = Texture::new(&gl, "copper_block.png");
 
     texture.bind(&gl);
@@ -95,7 +95,7 @@ fn main() -> Result<(), String> {
             Event::RedrawRequested(_) => {
                 unsafe {
                     let total_time = start.elapsed().expect("Timing error").as_secs_f32();
-                    program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
+                    //program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
 
                     gl.clear(glow::COLOR_BUFFER_BIT);
                     texture.bind(&gl);

@@ -1276,6 +1276,7 @@ dependencies = [
  "glutin",
  "image",
  "obj",
+ "png",
  "serde",
 ]
 

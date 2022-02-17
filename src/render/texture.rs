@@ -14,7 +14,7 @@ impl Texture {
     pub fn new(gl : &Context, filename : &str) -> Self {
         unsafe {
             let image = ImageReader::open(format!("assets/textures/{}", filename))
-                .expect("Unable to find texutre file.");
+                .expect("Unable to find texture file.");
 
             let image  = image.decode().unwrap();
             let image = image.into_rgba32f();

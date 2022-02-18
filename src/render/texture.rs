@@ -49,6 +49,10 @@ impl Texture {
         }
     }
 
+    pub fn destroy(&self, gl : &Context) {
+        unsafe { gl.delete_texture(self.texture); }
+    }
+
     pub fn bind(&self, gl : &Context) {
         unsafe { gl.bind_texture(TEXTURE_2D, Some(self.texture)); }
     }

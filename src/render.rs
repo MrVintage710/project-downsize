@@ -2,6 +2,7 @@ use glow::{Context, HasContext, FRAMEBUFFER_SRGB};
 use glutin::window::Window;
 use glutin::event_loop::EventLoop;
 use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext};
+use egui_glow::EguiGlow;
 
 pub mod frame;
 pub mod buffer;
@@ -11,17 +12,9 @@ pub mod texture;
 
 pub trait Renderable {
     unsafe fn render(&self, gl : &Context);
-
-    unsafe fn pre_render(&self, gl : &Context) {
-
-    }
-
-    unsafe fn post_order(&self, gl : &Context) {
-
-    }
 }
 
-pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()> ) {
+pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()>, EguiGlow) {
     unsafe {
         let event_loop = glutin::event_loop::EventLoop::with_user_event();
         let window_builder = glutin::window::WindowBuilder::new()
@@ -42,7 +35,9 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
 
         gl.enable(FRAMEBUFFER_SRGB);
 
-        (gl, "#version 410", window, event_loop)
+        let mut egui_glow = egui_glow::EguiGlow::new(&window, &gl);
+
+        (gl, "#version 410", window, event_loop, egui_glow)
     }
 }
 

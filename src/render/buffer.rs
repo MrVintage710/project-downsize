@@ -140,6 +140,10 @@ impl VBO {
         }
     }
 
+    pub fn destroy(&self, gl : &Context) {
+        unsafe { gl.delete_buffer(self.buffer) }
+    }
+
     fn set_type<T: 'static>(&mut self) {
         let t = TypeId::of::<T>();
         if t == TypeId::of::<i32>() {
@@ -197,6 +201,10 @@ impl VAO {
         }
     }
 
+    pub fn destroy(&self, gl : &Context) {
+        unsafe { gl.delete_vertex_array(self.array) }
+    }
+
     pub fn add_vbo(&mut self, gl : &Context, index : u16, vbo : &VBO) {
         if BitFlag16::max() <= index {panic!("The Max number of VAO attribs is {}, {} was given.", BitFlag16::max(), index)}
         if vbo.gl_type.is_none() {panic!("The VBO has no apparent type.")}
@@ -227,16 +235,14 @@ impl VAO {
 }
 
 impl Renderable for VAO {
-    unsafe fn pre_render(&self, gl: &Context) {
+    unsafe fn render(&self, gl: &Context) {
         self.bind(gl);
         for i in 0..BitFlag16::max() {
             if self.enabled_attribs.is_marked(i) {
                 gl.enable_vertex_attrib_array(i as u32)
             }
         }
-    }
 
-    unsafe fn render(&self, gl: &Context) {
         if self.element_array {
             gl.draw_elements(TRIANGLES, self.render_count as i32, UNSIGNED_INT, 0)
         } else {

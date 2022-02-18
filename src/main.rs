@@ -11,9 +11,7 @@ use crate::render::shader::ShaderProgram;
 use std::time::SystemTime;
 
 fn main() -> Result<(), String> {
-    let (gl, shader_version, window, event_loop) = createGlutinContext("Hello Triangle!");
-
-    let mut egui_glow = egui_glow::EguiGlow::new(&window, &gl);
+    let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Hello Triangle!");
 
     let verts : Vec<Vector3<f32>> = vec![
         Vector3::new(-0.5, 0.5, 0.0),
@@ -45,17 +43,11 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    //program.create_uniform_vec3(&gl, "color_shift", Vector3::new(-0.1, -0.1, -0.1));
     let texture = Texture::new(&gl, "copper_block.png");
 
     texture.bind(&gl);
     program.bind(&gl);
     vao.bind(&gl);
-
-    let start = SystemTime::now();
-    let mut last = SystemTime::now();
-
-    let mut clear_color = [0.1, 0.1, 0.1];
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
@@ -94,13 +86,9 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
-                    let total_time = start.elapsed().expect("Timing error").as_secs_f32();
-                    //program.uniform_vec3(&gl, "color_shift", Vector3::new(total_time.sin(), total_time.sin(), total_time.sin()));
-
                     gl.clear(glow::COLOR_BUFFER_BIT);
                     texture.bind(&gl);
                     program.bind(&gl);
-                    vao.pre_render(&gl);
                     vao.render(&gl);
                     egui_glow.paint(&window, &gl, list);
                     window.swap_buffers().unwrap();
@@ -108,7 +96,12 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawEventsCleared => {}
             Event::LoopDestroyed => {
-                egui_glow.destroy(&gl)
+                egui_glow.destroy(&gl);
+                program.destroy(&gl);
+                texture.destroy(&gl);
+                vao.destroy(&gl);
+                vert_vbo.destroy(&gl);
+                uv_vbo.destroy(&gl);
             }
         }
     });

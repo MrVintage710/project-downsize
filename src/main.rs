@@ -2,7 +2,7 @@ mod render;
 mod util;
 
 use glow::*;
-use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
+use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture, Debugable};
 use cgmath::{Vector3, Vector2};
 use crate::render::buffer::VAO;
 use glutin::event::{Event, WindowEvent};
@@ -43,6 +43,8 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
+    program.uniform(&gl, "test", Vector3::new(0.0, 0.0, 0.0));
+
     let texture = Texture::new(&gl, "copper_block.png");
 
     texture.bind(&gl);
@@ -56,6 +58,7 @@ fn main() -> Result<(), String> {
                 if ui.button("Quit").clicked() {
                     println!("Quit")
                 }
+                program.debug(ui)
             });
         });
 

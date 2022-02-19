@@ -3,6 +3,7 @@ use glutin::window::Window;
 use glutin::event_loop::EventLoop;
 use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext};
 use egui_glow::EguiGlow;
+use egui::Ui;
 
 pub mod frame;
 pub mod buffer;
@@ -12,6 +13,10 @@ pub mod texture;
 
 pub trait Renderable {
     unsafe fn render(&self, gl : &Context);
+}
+
+pub trait Debugable {
+    fn debug(&mut self, ui : &mut Ui);
 }
 
 pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()>, EguiGlow) {

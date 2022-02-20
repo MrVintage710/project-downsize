@@ -14,13 +14,15 @@ const TESSELATION_SHADER_INDEX: usize = 3;
 
 /// This enum represents all of the types that we can turn into a uniform value. To make something
 /// have the ability to become a uniform, implement `Into<UniformValue>` for that type.
-#[derive(Debug, Clone, Copy)]
+#[derive(Debug, Clone, Copy, PartialEq)]
 enum UniformValue {
     VEC4(Vector4<f32>),
     VEC3(Vector3<f32>),
     VEC2(Vector2<f32>),
     MAT4(Matrix4<f32>)
 }
+
+
 
 /// `Into<UniformValue>` implementation for `Vector4<f32>`. This is so that the type can be used in the
 /// `create_uniform()` and `set_uniform()` methods.
@@ -41,19 +43,54 @@ impl Into<UniformValue> for Vector3<f32> {
 /// This represents a Uniform state.
 struct UniformState {
     current_value : UniformValue,
-    last_value : UniformValue,
-    location : UniformLocation
+    hasChanged: bool,
+    location : Option<NativeUniformLocation>
 }
 
 impl UniformState {
-
-    pub fn new<T>(value : T, location : UniformLocation) -> Self where T : Into<UniformValue> {
+    pub fn new<T>(value : T, location : Option<UniformLocation>) -> Self where T : Into<UniformValue> {
         let value = value.into();
-        UniformState {current_value : value.clone(), last_value : value.clone(), location}
+        UniformState {current_value : value, hasChanged : false, location}
     }
 
     pub fn set<T>(&mut self, value : T) where T : Into<UniformValue> {
-        self.current_value = value.into()
+        let value  = value.into();
+        if std::mem::discriminant(&self.current_value) == std::mem::discriminant(&value) {
+            self.current_value = value;
+        } else {
+            panic!("The Uniform Type {:?} does not match type {:?}", value, self.current_value)
+        }
+        self.hasChanged = true;
+    }
+
+    pub fn get(&mut self) -> &UniformValue {
+        self.hasChanged = false;
+        &self.current_value
+    }
+
+    pub fn needs_update(&self) -> bool {
+        self.hasChanged
+    }
+}
+
+impl Debugable for UniformState {
+    fn debug(&mut self, ui: &mut Ui) {
+        ui.horizontal(|ui| {
+           match self.current_value {
+               VEC4(_) => {}
+               VEC3(mut value) => {
+                   let mut proxy = value.clone();
+                   ui.add(DragValue::new(&mut proxy.x));
+                   ui.add(DragValue::new(&mut proxy.y));
+                   ui.add(DragValue::new(&mut proxy.z));
+                   if proxy != value {
+                       self.set(proxy)
+                   }
+               }
+               UniformValue::VEC2(_) => {}
+               UniformValue::MAT4(_) => {}
+           }
+        });
     }
 }
 
@@ -122,34 +159,39 @@ impl ShaderProgram {
         }
     }
 
-    pub fn uniform<T>(&mut self, gl : &Context, name : &str, value : T) where T : Into<UniformValue>{
-        unsafe {
-            self.bind(gl);
-            let (uniform_type, uniform_location) = if !self.uniforms.contains_key(name) {
-                (value.into(), self.create_uniform(gl, name))
-            } else {
-                let uniform = self.uniforms.get(name).unwrap();
-                let t = value.into();
-                if std::mem::discriminant(&uniform.0) == std::mem::discriminant(&t) {
-                    (t, uniform.1)
-                } else {
-                    panic!("The Uniform Type {:?} does not match type {:?}", t, uniform.0)
-                }
-            };
-
-            match uniform_type {
-                VEC4(vec) => {todo!()}
-                VEC3(vec) => gl.uniform_3_f32(Some(&uniform_location), vec.x, vec.y, vec.z),
-                UniformValue::VEC2(vec) => {todo!()}
-                UniformValue::MAT4(vec) => {todo!()}
-            }
-            self.uniforms.insert(name.to_string(), (uniform_type, uniform_location));
+    pub fn uniform<T>(&mut self, name : &str, value : T) where T : Into<UniformValue> {
+        if self.uniforms.contains_key(name) {
+            let uniform = self.uniforms.get_mut(name).unwrap();
+            uniform.set(value)
+        } else {
+            let uniform = UniformState::new(value, None);
+            self.uniforms.insert(name.to_string(), uniform);
         }
     }
 
-    fn create_uniform(&mut self, gl : &Context, name : &str) -> NativeUniformLocation {
+    pub fn update_uniforms(&mut self, gl : &Context) {
         unsafe {
-            let uniform = gl.get_uniform_location(self.program, name);
+            let program = self.program.clone();
+            for (name, uniform) in self.uniforms.iter_mut() {
+                if uniform.location.is_none() {
+                    uniform.location = Some(ShaderProgram::create_uniform_location(program, gl, name))
+                }
+                if uniform.needs_update() {
+                    let location = uniform.location.unwrap().clone();
+                    match uniform.get() {
+                        VEC4(_) => {}
+                        VEC3(vec) => gl.uniform_3_f32(Some(&location), vec.x, vec.y, vec.z),
+                        UniformValue::VEC2(_) => {}
+                        UniformValue::MAT4(_) => {}
+                    }
+                }
+            }
+        }
+    }
+
+    fn create_uniform_location(program : NativeProgram, gl : &Context, name : &str) -> NativeUniformLocation {
+        unsafe {
+            let uniform = gl.get_uniform_location(program, name);
             if uniform.is_none() { panic!("Unable to create shader location '{}'", name)}
             uniform.unwrap()
         }
@@ -177,16 +219,7 @@ impl Debugable for ShaderProgram {
     fn debug(&mut self, ui: &mut Ui) {
         for (name, value) in self.uniforms.iter_mut() {
             ui.label(name);
-            match value.0 {
-                VEC4(vec) => {todo!()}
-                VEC3(mut vec) => {
-                    ui.horizontal(|ui| {
-                        ui.add(DragValue::new(&mut vec.x));
-                    });
-                }
-                UniformValue::VEC2(vec) => {todo!()}
-                UniformValue::MAT4(mat) => {todo!()}
-            }
+            value.debug(ui)
         }
     }
 }

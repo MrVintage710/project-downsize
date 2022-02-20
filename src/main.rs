@@ -43,7 +43,8 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    program.uniform(&gl, "test", Vector3::new(0.0, 0.0, 0.0));
+    program.uniform("test", Vector3::new(0.0, 0.0, 0.0));
+    program.uniform("un_3", Vector3::new(0.0, 0.0, 0.0));
 
     let texture = Texture::new(&gl, "copper_block.png");
 
@@ -92,6 +93,7 @@ fn main() -> Result<(), String> {
                     gl.clear(glow::COLOR_BUFFER_BIT);
                     texture.bind(&gl);
                     program.bind(&gl);
+                    program.update_uniforms(&gl);
                     vao.render(&gl);
                     egui_glow.paint(&window, &gl, list);
                     window.swap_buffers().unwrap();

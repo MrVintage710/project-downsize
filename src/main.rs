@@ -11,6 +11,7 @@ use crate::render::shader::ShaderProgram;
 use std::time::SystemTime;
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
+use crate::render::transform::Transform;
 
 fn main() -> Result<(), String> {
     let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Hello Triangle!");
@@ -58,7 +59,8 @@ fn main() -> Result<(), String> {
 
     let mut pers : Matrix4<f32> = perspective(Deg(45.0), window.window().inner_size().width as f32 / window.window().inner_size().height as f32, 0.1, 200.0);
 
-    program.uniform("perspective", pers);
+    let mut transform = Transform::new();
+    program.uniform("transform", pers);
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
@@ -68,7 +70,7 @@ fn main() -> Result<(), String> {
                     println!("Quit")
                 }
                 program.debug(ui, &UIRenderType::IMMUTABLE);
-                pers.debug(ui, &IMMUTABLE)
+                transform.debug(ui, &MUTABLE)
             });
         });
 
@@ -85,7 +87,6 @@ fn main() -> Result<(), String> {
                         unsafe {
                             *control_flow = ControlFlow::Exit
                         }
-
                     }
                     _ => (),
                 }

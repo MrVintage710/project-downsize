@@ -7,6 +7,7 @@ use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT, MAT4};
 use egui::{Ui, DragValue};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
+use crate::util::math::matrix_4_to_slice;
 
 const VERTEX_SHADER_INDEX : usize = 0;
 const FRAGMENT_SHADER_INDEX : usize = 1;
@@ -23,7 +24,7 @@ enum UniformValue {
     VEC4(Vector4<f32>),
     VEC3(Vector3<f32>),
     VEC2(Vector2<f32>),
-    MAT4(Matrix4<f32>)
+    MAT4(Matrix4<f32>),
 }
 
 /// `Into<UniformValue>` implementation for `Vector4<f32>`. This is so that the type can be used in the
@@ -247,30 +248,38 @@ impl ShaderProgram {
 
     pub fn update_uniforms(&mut self, gl : &Context) {
         unsafe {
-            let program = self.program.clone();
             for (name, uniform) in self.uniforms.iter_mut() {
                 if uniform.location.is_none() {
-                    uniform.location = Some(ShaderProgram::create_uniform_location(program, gl, name))
+                    uniform.location = Some(self.create_uniform_location(gl, name))
                 }
                 if uniform.needs_update() {
-                    let location = uniform.location.unwrap().clone();
-                    match uniform.get() {
-                        VEC4(_) => {}
-                        VEC3(vec) => gl.uniform_3_f32(Some(&location), vec.x, vec.y, vec.z),
-                        UniformValue::VEC2(_) => {}
-                        UniformValue::MAT4(_) => {}
-                        UniformValue::FLOAT(_) => {}
-                        UniformValue::INT(_) => {}
-                        UniformValue::UNSIGNED_INT(_) => {}
-                    }
+                    self.load_uniform(gl, &uniform.location.unwrap(), &uniform.get());
                 }
             }
         }
     }
 
-    fn create_uniform_location(program : NativeProgram, gl : &Context, name : &str) -> NativeUniformLocation {
+    fn load_uniform(&mut self, gl : &Context, location : &NativeUniformLocation, value : &UniformValue) {
         unsafe {
-            let uniform = gl.get_uniform_location(program, name);
+            match value {
+                VEC4(vec) => gl.uniform_4_f32(Some(&location), vec.x, vec.y, vec.z, vec.w),
+                VEC3(vec) => gl.uniform_3_f32(Some(&location), vec.x, vec.y, vec.z),
+                UniformValue::VEC2(vec) => gl.uniform_2_f32(Some(&location), vec.x, vec.y),
+                UniformValue::MAT4(mat) => gl.uniform_matrix_4_f32_slice(Some(&location), false, matrix_4_to_slice(&mat)),
+                UniformValue::FLOAT(_) => {}
+                UniformValue::INT(_) => {}
+                UniformValue::UNSIGNED_INT(_) => {}
+            }
+        }
+    }
+
+    pub fn load_uniform_immediate<T>(&self, gl : &Context, location : &NativeUniformLocation, value : T) where T : Into<UniformValue> {
+
+    }
+
+    pub fn create_uniform_location(&mut self, gl : &Context, name : &str) -> NativeUniformLocation {
+        unsafe {
+            let uniform = gl.get_uniform_location(self.program.clone(), name);
             if uniform.is_none() { panic!("Unable to create shader location '{}'", name)}
             uniform.unwrap()
         }

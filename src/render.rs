@@ -9,14 +9,11 @@ pub mod frame;
 pub mod buffer;
 pub mod shader;
 pub mod texture;
+pub mod debug;
 //pub mod model;
 
 pub trait Renderable {
     unsafe fn render(&self, gl : &Context);
-}
-
-pub trait Debugable {
-    fn debug(&mut self, ui : &mut Ui);
 }
 
 pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()>, EguiGlow) {

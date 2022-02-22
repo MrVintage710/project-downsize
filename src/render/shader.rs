@@ -3,9 +3,10 @@ use std::ops::Add;
 use std::fs;
 use cgmath::{Vector3, Vector2, Vector4, Matrix4};
 use std::collections::HashMap;
-use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT};
-use crate::render::Debugable;
+use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT, MAT4};
 use egui::{Ui, DragValue};
+use crate::render::debug::{Debugable, UIRenderType};
+use crate::render::debug::UIRenderType::*;
 
 const VERTEX_SHADER_INDEX : usize = 0;
 const FRAGMENT_SHADER_INDEX : usize = 1;
@@ -59,17 +60,34 @@ impl Into<UniformValue> for f32 {
     }
 }
 
+impl Into<UniformValue> for Matrix4<f32> {
+    fn into(self) -> UniformValue {
+        MAT4(self)
+    }
+}
+
 /// This represents a Uniform state.
 struct UniformState {
     current_value : UniformValue,
     hasChanged: bool,
-    location : Option<NativeUniformLocation>
+    location : Option<NativeUniformLocation>,
+    render_type: UIRenderType
 }
 
 impl UniformState {
     pub fn new<T>(value : T, location : Option<UniformLocation>) -> Self where T : Into<UniformValue> {
         let value = value.into();
-        UniformState {current_value : value, hasChanged : false, location}
+        UniformState {current_value : value, hasChanged : false, location, render_type : UIRenderType::HIDDEN}
+    }
+
+    pub fn as_debug_mutable(mut self) -> Self {
+        self.render_type = MUTABLE;
+        self
+    }
+
+    pub fn as_debug_immutable(mut self) -> Self {
+        self.render_type = IMMUTABLE;
+        self
     }
 
     pub fn set<T>(&mut self, value : T) where T : Into<UniformValue> {
@@ -93,49 +111,49 @@ impl UniformState {
 }
 
 impl Debugable for UniformState {
-    fn debug(&mut self, ui: &mut Ui) {
+    fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
         ui.horizontal(|ui| {
            match self.current_value {
                VEC4(value) => {
                    let mut proxy = value.clone();
-                   ui.add(DragValue::new(&mut proxy.x));
-                   ui.add(DragValue::new(&mut proxy.y));
-                   ui.add(DragValue::new(&mut proxy.z));
-                   ui.add(DragValue::new(&mut proxy.w));
+                   proxy.debug(ui, render_type);
                    if proxy != value {
                        self.set(proxy)
                    }
                }
                VEC3(mut value) => {
                    let mut proxy = value.clone();
-                   ui.add(DragValue::new(&mut proxy.x));
-                   ui.add(DragValue::new(&mut proxy.y));
-                   ui.add(DragValue::new(&mut proxy.z));
+                   proxy.debug(ui, render_type);
                    if proxy != value {
                        self.set(proxy)
                    }
                }
                UniformValue::VEC2(value) => {
                    let mut proxy = value.clone();
-                   ui.add(DragValue::new(&mut proxy.x));
-                   ui.add(DragValue::new(&mut proxy.y));
+                   proxy.debug(ui, render_type);
                    if proxy != value {
                        self.set(proxy)
                    }
                }
-               UniformValue::MAT4(_) => {}
+               UniformValue::MAT4(value) => {
+                   let mut proxy = value.clone();
+                   proxy.debug(ui, render_type);
+                   if proxy != value {
+                       self.set(proxy)
+                   }
+               }
                UniformValue::FLOAT(value) => {
                    let mut proxy = value.clone();
-                   ui.add(DragValue::new(&mut proxy));
+                   proxy.debug(ui, render_type);
                    if proxy != value {
                        self.set(proxy)
                    }
                }
                UniformValue::INT(value) => {
                    let mut proxy = value.clone();
-                   ui.add(DragValue::new(&mut proxy));
+                   proxy.debug(ui, render_type);
                    if proxy != value {
-
+                       self.set(proxy)
                    }
                }
                UniformValue::UNSIGNED_INT(_) => {}
@@ -221,6 +239,12 @@ impl ShaderProgram {
         }
     }
 
+    pub fn uniform_debug_type(&mut self, name : &str, debug_type : UIRenderType) {
+        if self.uniforms.contains_key(name) {
+            self.uniforms.get_mut(name).unwrap().render_type = debug_type;
+        }
+    }
+
     pub fn update_uniforms(&mut self, gl : &Context) {
         unsafe {
             let program = self.program.clone();
@@ -271,10 +295,15 @@ impl ShaderProgram {
 }
 
 impl Debugable for ShaderProgram {
-    fn debug(&mut self, ui: &mut Ui) {
+    fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
+        if let UIRenderType::HIDDEN = render_type {return;}
+
         for (name, value) in self.uniforms.iter_mut() {
-            ui.label(name);
-            value.debug(ui)
+            if let UIRenderType::HIDDEN = value.render_type {}
+            else {
+                ui.label(name);
+                value.debug(ui, &value.render_type.clone())
+            }
         }
     }
 }

@@ -10,6 +10,7 @@ pub mod buffer;
 pub mod shader;
 pub mod texture;
 pub mod debug;
+pub mod transform;
 //pub mod model;
 
 pub trait Renderable {

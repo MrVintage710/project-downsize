@@ -3,7 +3,7 @@ mod util;
 
 use glow::*;
 use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
-use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix};
+use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
 use crate::render::buffer::VAO;
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
@@ -56,6 +56,10 @@ fn main() -> Result<(), String> {
     program.bind(&gl);
     vao.bind(&gl);
 
+    let mut pers : Matrix4<f32> = perspective(Deg(45.0), window.window().inner_size().width as f32 / window.window().inner_size().height as f32, 0.1, 200.0);
+
+    program.uniform("perspective", pers);
+
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
             egui::SidePanel::left("side_panel").show(egui_ctx, |ui| {
@@ -64,6 +68,7 @@ fn main() -> Result<(), String> {
                     println!("Quit")
                 }
                 program.debug(ui, &UIRenderType::IMMUTABLE);
+                pers.debug(ui, &IMMUTABLE)
             });
         });
 

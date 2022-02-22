@@ -3,7 +3,7 @@ use std::ops::Add;
 use std::fs;
 use cgmath::{Vector3, Vector2, Vector4, Matrix4};
 use std::collections::HashMap;
-use crate::render::shader::UniformValue::{VEC4, VEC3};
+use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT};
 use crate::render::Debugable;
 use egui::{Ui, DragValue};
 
@@ -16,13 +16,14 @@ const TESSELATION_SHADER_INDEX: usize = 3;
 /// have the ability to become a uniform, implement `Into<UniformValue>` for that type.
 #[derive(Debug, Clone, Copy, PartialEq)]
 enum UniformValue {
+    FLOAT(f32),
+    INT(i32),
+    UNSIGNED_INT(u32),
     VEC4(Vector4<f32>),
     VEC3(Vector3<f32>),
     VEC2(Vector2<f32>),
     MAT4(Matrix4<f32>)
 }
-
-
 
 /// `Into<UniformValue>` implementation for `Vector4<f32>`. This is so that the type can be used in the
 /// `create_uniform()` and `set_uniform()` methods.
@@ -37,6 +38,24 @@ impl Into<UniformValue> for Vector4<f32> {
 impl Into<UniformValue> for Vector3<f32> {
     fn into(self) -> UniformValue {
         VEC3(self)
+    }
+}
+
+impl Into<UniformValue> for Vector2<f32> {
+    fn into(self) -> UniformValue {
+        VEC2(self)
+    }
+}
+
+impl Into<UniformValue> for i32 {
+    fn into(self) -> UniformValue {
+        INT(self)
+    }
+}
+
+impl Into<UniformValue> for f32 {
+    fn into(self) -> UniformValue {
+        FLOAT(self)
     }
 }
 
@@ -77,7 +96,16 @@ impl Debugable for UniformState {
     fn debug(&mut self, ui: &mut Ui) {
         ui.horizontal(|ui| {
            match self.current_value {
-               VEC4(_) => {}
+               VEC4(value) => {
+                   let mut proxy = value.clone();
+                   ui.add(DragValue::new(&mut proxy.x));
+                   ui.add(DragValue::new(&mut proxy.y));
+                   ui.add(DragValue::new(&mut proxy.z));
+                   ui.add(DragValue::new(&mut proxy.w));
+                   if proxy != value {
+                       self.set(proxy)
+                   }
+               }
                VEC3(mut value) => {
                    let mut proxy = value.clone();
                    ui.add(DragValue::new(&mut proxy.x));
@@ -87,12 +115,36 @@ impl Debugable for UniformState {
                        self.set(proxy)
                    }
                }
-               UniformValue::VEC2(_) => {}
+               UniformValue::VEC2(value) => {
+                   let mut proxy = value.clone();
+                   ui.add(DragValue::new(&mut proxy.x));
+                   ui.add(DragValue::new(&mut proxy.y));
+                   if proxy != value {
+                       self.set(proxy)
+                   }
+               }
                UniformValue::MAT4(_) => {}
+               UniformValue::FLOAT(value) => {
+                   let mut proxy = value.clone();
+                   ui.add(DragValue::new(&mut proxy));
+                   if proxy != value {
+                       self.set(proxy)
+                   }
+               }
+               UniformValue::INT(value) => {
+                   let mut proxy = value.clone();
+                   ui.add(DragValue::new(&mut proxy));
+                   if proxy != value {
+
+                   }
+               }
+               UniformValue::UNSIGNED_INT(_) => {}
            }
         });
     }
 }
+
+//fn debug_vec3()
 
 /// This is a shader program struct. It stores all the functionality need for loading shaders and
 /// setting uniform values. This struct also stores the current state of uniforms.
@@ -183,6 +235,9 @@ impl ShaderProgram {
                         VEC3(vec) => gl.uniform_3_f32(Some(&location), vec.x, vec.y, vec.z),
                         UniformValue::VEC2(_) => {}
                         UniformValue::MAT4(_) => {}
+                        UniformValue::FLOAT(_) => {}
+                        UniformValue::INT(_) => {}
+                        UniformValue::UNSIGNED_INT(_) => {}
                     }
                 }
             }

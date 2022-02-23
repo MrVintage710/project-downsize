@@ -3,11 +3,11 @@ use std::ops::Add;
 use std::fs;
 use cgmath::{Vector3, Vector2, Vector4, Matrix4};
 use std::collections::HashMap;
-use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT, MAT4};
+use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT, MAT4, TRANSFORM};
 use egui::{Ui, DragValue};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
-use crate::util::math::matrix_4_to_slice;
+use crate::render::transform::Transform;
 
 const VERTEX_SHADER_INDEX : usize = 0;
 const FRAGMENT_SHADER_INDEX : usize = 1;
@@ -25,6 +25,7 @@ enum UniformValue {
     VEC3(Vector3<f32>),
     VEC2(Vector2<f32>),
     MAT4(Matrix4<f32>),
+    TRANSFORM(Transform)
 }
 
 /// `Into<UniformValue>` implementation for `Vector4<f32>`. This is so that the type can be used in the
@@ -64,6 +65,12 @@ impl Into<UniformValue> for f32 {
 impl Into<UniformValue> for Matrix4<f32> {
     fn into(self) -> UniformValue {
         MAT4(self)
+    }
+}
+
+impl Into<UniformValue> for Transform {
+    fn into(self) -> UniformValue {
+        TRANSFORM(self)
     }
 }
 
@@ -158,6 +165,13 @@ impl Debugable for UniformState {
                    }
                }
                UniformValue::UNSIGNED_INT(_) => {}
+               UniformValue::TRANSFORM(value) => {
+                   let mut proxy = value.clone();
+                   proxy.debug(ui, render_type);
+                   if proxy != value {
+                       self.set(proxy)
+                   }
+               }
            }
         });
     }
@@ -250,25 +264,35 @@ impl ShaderProgram {
         unsafe {
             for (name, uniform) in self.uniforms.iter_mut() {
                 if uniform.location.is_none() {
-                    uniform.location = Some(self.create_uniform_location(gl, name))
+                    uniform.location = Some(ShaderProgram::create_uniform_location(self.program.clone(), gl, name))
                 }
                 if uniform.needs_update() {
-                    self.load_uniform(gl, &uniform.location.unwrap(), &uniform.get());
+                    ShaderProgram::load_uniform(gl, &uniform.location.unwrap(), &uniform.get());
                 }
             }
         }
     }
 
-    fn load_uniform(&mut self, gl : &Context, location : &NativeUniformLocation, value : &UniformValue) {
+    fn load_uniform(gl : &Context, location : &NativeUniformLocation, value : &UniformValue) {
         unsafe {
             match value {
                 VEC4(vec) => gl.uniform_4_f32(Some(&location), vec.x, vec.y, vec.z, vec.w),
                 VEC3(vec) => gl.uniform_3_f32(Some(&location), vec.x, vec.y, vec.z),
                 UniformValue::VEC2(vec) => gl.uniform_2_f32(Some(&location), vec.x, vec.y),
-                UniformValue::MAT4(mat) => gl.uniform_matrix_4_f32_slice(Some(&location), false, matrix_4_to_slice(&mat)),
+                UniformValue::MAT4(mat) => {
+                    let slice : [[f32; 4]; 4] = mat.clone().into();
+                    let result = &slice.concat();
+                    gl.uniform_matrix_4_f32_slice(Some(&location), false, result)
+                },
                 UniformValue::FLOAT(_) => {}
                 UniformValue::INT(_) => {}
                 UniformValue::UNSIGNED_INT(_) => {}
+                UniformValue::TRANSFORM(transform) => {
+                    let mat = transform.get_mat();
+                    let slice : [[f32; 4]; 4] = mat.clone().into();
+                    let result = &slice.concat();
+                    gl.uniform_matrix_4_f32_slice(Some(&location), false, result)
+                }
             }
         }
     }
@@ -277,9 +301,9 @@ impl ShaderProgram {
 
     }
 
-    pub fn create_uniform_location(&mut self, gl : &Context, name : &str) -> NativeUniformLocation {
+    pub fn create_uniform_location(program : NativeProgram, gl : &Context, name : &str) -> NativeUniformLocation {
         unsafe {
-            let uniform = gl.get_uniform_location(self.program.clone(), name);
+            let uniform = gl.get_uniform_location(program, name);
             if uniform.is_none() { panic!("Unable to create shader location '{}'", name)}
             uniform.unwrap()
         }

@@ -7,9 +7,9 @@ out vec2 uv_pos;
 
 uniform vec3 test;
 
-uniform mat4 perspective;
+uniform mat4 transform;
 
 void main() {
-    gl_Position = perspective * vec4(pos + test/100, 1.0);
+    gl_Position = transform * vec4(pos + test/100, 1.0);
     uv_pos = uv;
 }

@@ -49,18 +49,16 @@ fn main() -> Result<(), String> {
     program.uniform("test", Vector3::new(0.0, 0.0, 0.0));
     program.uniform("color_shift", Vector3::new(0.0, 0.0, 0.0));
 
-    program.uniform_debug_type("test", MUTABLE);
-
     let texture = Texture::new(&gl, "copper_block.png");
 
     texture.bind(&gl);
     program.bind(&gl);
     vao.bind(&gl);
 
-    let mut pers : Matrix4<f32> = perspective(Deg(45.0), window.window().inner_size().width as f32 / window.window().inner_size().height as f32, 0.1, 200.0);
-
     let mut transform = Transform::new();
-    program.uniform("transform", pers);
+
+    program.uniform("transform", transform);
+    program.uniform_debug_type("transform", MUTABLE);
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
@@ -69,8 +67,7 @@ fn main() -> Result<(), String> {
                 if ui.button("Quit").clicked() {
                     println!("Quit")
                 }
-                program.debug(ui, &UIRenderType::IMMUTABLE);
-                transform.debug(ui, &MUTABLE)
+                program.debug(ui, &UIRenderType::MUTABLE);
             });
         });
 

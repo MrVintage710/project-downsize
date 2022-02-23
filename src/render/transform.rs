@@ -3,7 +3,7 @@ use egui::emath::Numeric;
 use crate::render::debug::{Debugable, UIRenderType};
 use egui::Ui;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Transform  {
     pos : Vector3<f32>,
     scale: Vector3<f32>,

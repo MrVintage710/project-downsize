@@ -63,10 +63,6 @@ fn main() -> Result<(), String> {
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
             egui::SidePanel::left("side_panel").show(egui_ctx, |ui| {
-                ui.heading("Hello World!");
-                if ui.button("Quit").clicked() {
-                    println!("Quit")
-                }
                 program.debug(ui, &UIRenderType::MUTABLE);
             });
         });

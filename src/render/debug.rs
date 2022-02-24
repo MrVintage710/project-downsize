@@ -46,9 +46,9 @@ impl <T> Debugable for Vector3<T> where T : Numeric {
 
         ui.add_enabled_ui(enabled, |ui| {
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut self.x));
-                ui.add(DragValue::new(&mut self.y));
-                ui.add(DragValue::new(&mut self.z));
+                ui.add(DragValue::new(&mut self.x).speed(0.1));
+                ui.add(DragValue::new(&mut self.y).speed(0.1));
+                ui.add(DragValue::new(&mut self.z).speed(0.1));
             });
         });
     }

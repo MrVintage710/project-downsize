@@ -334,8 +334,9 @@ impl Debugable for ShaderProgram {
         for (name, value) in self.uniforms.iter_mut() {
             if let UIRenderType::HIDDEN = value.render_type {}
             else {
-                ui.label(name);
-                value.debug(ui, &value.render_type.clone())
+                ui.collapsing(name, |ui|{
+                    value.debug(ui, &value.render_type.clone())
+                });
             }
         }
     }

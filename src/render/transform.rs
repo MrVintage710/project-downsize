@@ -40,9 +40,18 @@ impl Into<Matrix4<f32>> for Transform {
 impl Debugable for Transform {
     fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
         ui.vertical(|ui|{
-            self.pos.debug(ui, render_type);
-            self.scale.debug(ui, render_type);
-            self.rotation.debug(ui, render_type)
+            ui.horizontal(|ui| {
+                ui.label("Position");
+                self.pos.debug(ui, render_type)
+            });
+            ui.horizontal(|ui| {
+                ui.label("Scale");
+                self.scale.debug(ui, render_type);
+            });
+            ui.horizontal(|ui| {
+                ui.label("Rotation");
+                self.rotation.debug(ui, render_type)
+            });
         });
     }
 }

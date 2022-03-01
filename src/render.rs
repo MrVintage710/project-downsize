@@ -1,4 +1,4 @@
-use glow::{Context, HasContext, FRAMEBUFFER_SRGB};
+use glow::{Context, HasContext, FRAMEBUFFER_SRGB, DEPTH_TEST};
 use glutin::window::Window;
 use glutin::event_loop::EventLoop;
 use glutin::{ContextWrapper, PossiblyCurrent, WindowedContext};
@@ -11,6 +11,7 @@ pub mod shader;
 pub mod texture;
 pub mod debug;
 pub mod transform;
+mod model;
 //pub mod model;
 
 pub trait Renderable {
@@ -37,6 +38,7 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
             glow::Context::from_loader_function(|s| window.get_proc_address(s) as *const _);
 
         gl.enable(FRAMEBUFFER_SRGB);
+        gl.enable(DEPTH_TEST);
 
         let mut egui_glow = egui_glow::EguiGlow::new(&window, &gl);
 

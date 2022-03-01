@@ -12,6 +12,7 @@ use std::time::SystemTime;
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
+use egui::Align2;
 
 fn main() -> Result<(), String> {
     let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Hello Triangle!");
@@ -46,7 +47,6 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    program.uniform("test", Vector3::new(0.0, 0.0, 0.0));
     program.uniform("color_shift", Vector3::new(0.0, 0.0, 0.0));
 
     let texture = Texture::new(&gl, "copper_block.png");
@@ -56,15 +56,34 @@ fn main() -> Result<(), String> {
     vao.bind(&gl);
 
     let mut transform = Transform::new();
+    transform.pos.z = -1.0;
+
+    let mut camera = Transform::new();
+
+    let window_size = window.window().inner_size();
+    let aspect_ratio =  (window_size.width as f32 / window_size.height as f32);
+    println!("Aspect Ratio: {}", aspect_ratio);
+    let perspective = perspective(Deg(90.0), aspect_ratio, 0.00001, 200.0);
 
     program.uniform("transform", transform);
     program.uniform_debug_type("transform", MUTABLE);
+
+    program.uniform("perspective", perspective);
+
+    program.uniform("camera", camera.get_inverted_mat());
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
             egui::SidePanel::left("side_panel").show(egui_ctx, |ui| {
                 program.debug(ui, &UIRenderType::MUTABLE);
+                camera.debug(ui, &UIRenderType::MUTABLE);
             });
+
+            let window = egui::Window::new("Debug")
+                .collapsible(false)
+                .anchor(Align2::LEFT_TOP, (10.0, 10.0))
+                .title_bar(false)
+                .resizable(false);
         });
 
         match event {
@@ -93,9 +112,10 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
-                    gl.clear(glow::COLOR_BUFFER_BIT);
+                    gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
                     texture.bind(&gl);
                     program.bind(&gl);
+                    program.uniform("camera", camera.get_inverted_mat());
                     program.update_uniforms(&gl);
                     vao.render(&gl);
                     egui_glow.paint(&window, &gl, list);

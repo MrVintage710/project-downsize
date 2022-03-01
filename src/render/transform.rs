@@ -6,9 +6,9 @@ use transform_matrix::Transform as TransformMatrix;
 
 #[derive(Clone, Copy, Debug, PartialEq)]
 pub struct Transform  {
-    pos : Vector3<f32>,
-    scale: Vector3<f32>,
-    rotation : Vector3<f32>
+    pub pos : Vector3<f32>,
+    pub scale: Vector3<f32>,
+    pub rotation : Vector3<f32>
 }
 
 impl Transform {
@@ -26,14 +26,24 @@ impl Transform {
         let rotation_x_mat = Matrix4::from_angle_x(Deg(self.rotation.x));
         let rotation_y_mat = Matrix4::from_angle_y(Deg(self.rotation.y));
         let rotation_z_mat = Matrix4::from_angle_z(Deg(self.rotation.z));
-        let mat = rotation_x_mat * rotation_y_mat * rotation_z_mat * transform_mat * scale_mat;
+        let mat =  transform_mat * scale_mat * rotation_x_mat * rotation_y_mat * rotation_z_mat;
+        mat
+    }
+
+    pub fn get_inverted_mat(&self) -> Matrix4<f32> {
+        let transform_mat = Matrix4::from_translation(-self.pos);
+        let scale_mat = Matrix4::from_nonuniform_scale(self.scale.x, self.scale.y, self.scale.z);
+        let rotation_x_mat = Matrix4::from_angle_x(Deg(-self.rotation.x));
+        let rotation_y_mat = Matrix4::from_angle_y(Deg(-self.rotation.y));
+        let rotation_z_mat = Matrix4::from_angle_z(Deg(-self.rotation.z));
+        let mat =  transform_mat * rotation_x_mat * rotation_y_mat * rotation_z_mat;
         mat
     }
 }
 
 impl Into<Matrix4<f32>> for Transform {
     fn into(self) -> Matrix4<f32> {
-        todo!()
+        self.get_mat()
     }
 }
 

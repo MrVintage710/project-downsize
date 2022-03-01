@@ -5,11 +5,11 @@ layout (location = 1) in vec2 uv;
 
 out vec2 uv_pos;
 
-uniform vec3 test;
-
 uniform mat4 transform;
+uniform mat4 perspective;
+uniform mat4 camera;
 
 void main() {
-    gl_Position = transform * vec4(pos + test/100, 1.0);
+    gl_Position = perspective * camera * transform * vec4(pos, 1.0);
     uv_pos = uv;
 }

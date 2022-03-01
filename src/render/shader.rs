@@ -85,7 +85,7 @@ struct UniformState {
 impl UniformState {
     pub fn new<T>(value : T, location : Option<UniformLocation>) -> Self where T : Into<UniformValue> {
         let value = value.into();
-        UniformState {current_value : value, hasChanged : false, location, render_type : UIRenderType::HIDDEN}
+        UniformState {current_value : value, hasChanged : true, location, render_type : UIRenderType::HIDDEN}
     }
 
     pub fn as_debug_mutable(mut self) -> Self {
@@ -101,11 +101,14 @@ impl UniformState {
     pub fn set<T>(&mut self, value : T) where T : Into<UniformValue> {
         let value  = value.into();
         if std::mem::discriminant(&self.current_value) == std::mem::discriminant(&value) {
-            self.current_value = value;
+            if self.current_value != value {
+                self.current_value = value;
+                self.hasChanged = true;
+            }
         } else {
             panic!("The Uniform Type {:?} does not match type {:?}", value, self.current_value)
         }
-        self.hasChanged = true;
+
     }
 
     pub fn get(&mut self) -> &UniformValue {
@@ -267,6 +270,7 @@ impl ShaderProgram {
                     uniform.location = Some(ShaderProgram::create_uniform_location(self.program.clone(), gl, name))
                 }
                 if uniform.needs_update() {
+                    //println!("Updating uniform: {}", name);
                     ShaderProgram::load_uniform(gl, &uniform.location.unwrap(), &uniform.get());
                 }
             }

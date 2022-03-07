@@ -178,7 +178,8 @@ impl VBO {
     }
 }
 
-///VAO implementation. Should handle all of the memory management for me.
+///VAO implementation. This struct will store the pointer to the vao and some other
+/// information that is important for operation.
 pub struct VAO {
     array: NativeVertexArray,
     enabled_attribs : BitFlag16,
@@ -187,6 +188,7 @@ pub struct VAO {
 }
 
 impl VAO {
+    ///Creates a new VBO. If there is an error, throws Result.
     pub fn new(gl : &Context) -> Result<Self, String> {
         unsafe {
             let vao = gl.create_vertex_array()?;
@@ -251,13 +253,20 @@ impl Renderable for VAO {
     }
 }
 
-//Tests for vbo's
-// #[cfg(test)]
-// mod render_tests{
-//     use super::*;
-//
-//     #[test]
-//     fn type_test() {
-//         let vbo = VBO::new()
-//     }
-// }
+pub struct FBO {
+    fbo : NativeFramebuffer
+}
+
+impl FBO {
+
+    pub fn new(gl : &Context) -> Result<Self, String> {
+        unsafe {
+            let fbo = gl.create_framebuffer()?;
+            Ok(FBO{fbo})
+        }
+    }
+
+    pub fn add_color_attachment(&self, gl : &Context) {
+
+    }
+}

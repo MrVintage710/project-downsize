@@ -12,9 +12,10 @@ struct OBJModel {
 impl OBJModel {
 
     pub fn new(gl : &Context, file_name : &str) {
-        let path = PathBuf::new();
-        path.join("assets/models");
-        path.join(file_name);
+        let path = Path::new("")
+            .join("assets")
+            .join("models")
+            .join(file_name);
         let obj = Obj::load(path.as_path());
     }
 

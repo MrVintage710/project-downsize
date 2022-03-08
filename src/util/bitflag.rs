@@ -39,3 +39,32 @@ impl BitFlag16 {
         0b1 << index
     }
 }
+
+#[derive(Copy, Clone, Eq, PartialEq)]
+pub struct BitFlag32 {
+    mask : u32
+}
+
+impl BitFlag32 {
+    pub fn new() -> Self {
+        BitFlag32 {mask : 0}
+    }
+
+    pub fn mark(&mut self, index : u8) {
+        let bit = self.indexToBit(index);
+        self.mask = self.mask | bit as u32;
+    }
+
+    pub fn is_marked(&self, index : u8) -> bool {
+        let bit = self.indexToBit(index);
+        let mask = self.mask & bit as u32;
+        let mask = mask >> index;
+        mask == 1
+    }
+
+    pub fn max() -> u8 { 32 }
+
+    fn indexToBit(&self, index : u8) -> u8 {
+        0b1 << index
+    }
+}

@@ -4,7 +4,7 @@ mod util;
 use glow::*;
 use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
 use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
-use crate::render::buffer::VAO;
+use crate::render::buffer::{FBO, VAO};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use crate::render::shader::ShaderProgram;
@@ -50,6 +50,8 @@ fn main() -> Result<(), String> {
     program.uniform("color_shift", Vector3::new(0.0, 0.0, 0.0));
 
     let texture = Texture::new(&gl, "copper_block.png");
+
+    let fbo = FBO::new(&gl)?.with_texture_attachment(&gl, 32, 32, 0)?;
 
     texture.bind(&gl);
     program.bind(&gl);
@@ -112,11 +114,17 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
-                    gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-                    texture.bind(&gl);
                     program.bind(&gl);
                     program.uniform("camera", camera.get_inverted_mat());
                     program.update_uniforms(&gl);
+                    fbo.bind(&gl);
+
+                    texture.bind(&gl);
+                    vao.render(&gl);
+                    FBO::unbind(&gl);
+                    gl.clear_color(0.0, 0.0, 0.0, 0.0);
+                    gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+                    fbo.enable_color_attachment(&gl, 0);
                     vao.render(&gl);
                     egui_glow.paint(&window, &gl, list);
                     window.swap_buffers().unwrap();

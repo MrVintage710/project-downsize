@@ -5,7 +5,7 @@ use glow::*;
 use cgmath::{Vector3, Vector2, Vector4};
 use std::any::TypeId;
 use crate::render::Renderable;
-use crate::util::bitflag::BitFlag16;
+use crate::util::bitflag::{BitFlag16, BitFlag32};
 
 ///This is a functional Wrapping of a vbo. This should have all the functions required to create and manage memory in a vbo
 pub struct VBO {
@@ -254,7 +254,8 @@ impl Renderable for VAO {
 }
 
 pub struct FBO {
-    fbo : NativeFramebuffer
+    color_attachments: [Option<NativeTexture>; 32],
+    fbo : NativeFramebuffer,
 }
 
 impl FBO {
@@ -262,11 +263,50 @@ impl FBO {
     pub fn new(gl : &Context) -> Result<Self, String> {
         unsafe {
             let fbo = gl.create_framebuffer()?;
-            Ok(FBO{fbo})
+            let mut color_attachments : [Option<NativeTexture>; 32] = [None; 32];
+            Ok(FBO{fbo, color_attachments})
         }
     }
 
-    pub fn add_color_attachment(&self, gl : &Context) {
+    pub fn with_texture_attachment(mut self, gl : &Context, width : u32, height : u32, color_attachment : usize) -> Result<Self, String> {
+        if color_attachment > 31 {return Err(format!("'{}' is above the highest color attachment (31)!", color_attachment))}
+        if self.color_attachments[color_attachment].is_some() {
+            Err(format!("Color Attachment '{}' is already in use.", color_attachment))
+        } else {
+            unsafe {
+                self.bind(gl);
 
+                let texture = gl.create_texture()?;
+                gl.bind_texture(TEXTURE_2D, Some(texture));
+                gl.tex_image_2d(TEXTURE_2D, 0, SRGB as i32, width as i32, height as i32, 0, RGB, UNSIGNED_BYTE, None);
+                gl.bind_texture(TEXTURE_2D, None);
+                gl.framebuffer_texture_2d(FRAMEBUFFER, COLOR_ATTACHMENT0 + color_attachment as u32, TEXTURE_2D, Some(texture), 0);
+
+                self.color_attachments[color_attachment as usize] = Some(texture);
+
+                FBO::unbind(gl);
+                Ok(self)
+            }
+        }
+    }
+
+    pub fn enable_color_attachment(&self, gl : &Context, attachment : usize) {
+        if self.color_attachments[attachment].is_some() {
+            unsafe { gl.bind_texture(TEXTURE_2D, self.color_attachments[attachment]); }
+        } else {
+            panic!("Color attachment '{}' has not been setup for this FBO", attachment)
+        }
+    }
+
+    pub fn destroy(&self, gl : &Context) {
+        unsafe { gl.delete_framebuffer(self.fbo); }
+    }
+
+    pub fn bind(&self, gl : &Context) {
+        unsafe {gl.bind_framebuffer(FRAMEBUFFER, Some(self.fbo))}
+    }
+
+    pub fn unbind(gl : &Context) {
+        unsafe {gl.bind_framebuffer(FRAMEBUFFER, None)}
     }
 }

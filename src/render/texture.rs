@@ -56,4 +56,12 @@ impl Texture {
     pub fn bind(&self, gl : &Context) {
         unsafe { gl.bind_texture(TEXTURE_2D, Some(self.texture)); }
     }
+
+    pub fn bind_index(&self, gl : &Context, index : u8) {
+        if index >= 16 { panic!("'{}' is to large to be a texture index.", index)}
+        unsafe {
+            gl.active_texture(TEXTURE0 + index as u32);
+            gl.bind_texture(TEXTURE_2D, Some(self.texture));
+        }
+    }
 }

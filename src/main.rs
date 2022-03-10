@@ -42,50 +42,49 @@ fn main() -> Result<(), String> {
     vao.add_vbo(&gl ,0, &vert_vbo);
     vao.add_vbo(&gl, 1, &uv_vbo);
 
+    let texture = Texture::new(&gl, "copper_block.png");
+
     let mut program = ShaderProgram::new(&gl)?;
     program.load_vertex_shader(&gl, "static_vert.glsl");
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    program.uniform("color_shift", Vector3::new(0.0, 0.0, 0.0));
-
-    let texture = Texture::new(&gl, "copper_block.png");
-
-    let fbo = FBO::new(&gl)?.with_texture_attachment(&gl, 32, 32, 0)?;
-
-    texture.bind(&gl);
-    program.bind(&gl);
-    vao.bind(&gl);
-
-    let mut transform = Transform::new();
-    transform.pos.z = -1.0;
-
-    let mut camera = Transform::new();
+    //The fbo that we are saving
+    let fbo = FBO::new(&gl)?
+        .with_texture_attachment(&gl, 64, 64, 1)?;
 
     let window_size = window.window().inner_size();
     let aspect_ratio =  (window_size.width as f32 / window_size.height as f32);
     println!("Aspect Ratio: {}", aspect_ratio);
     let perspective = perspective(Deg(90.0), aspect_ratio, 0.00001, 200.0);
 
-    program.uniform("transform", transform);
-    program.uniform_debug_type("transform", MUTABLE);
+    let transform = Transform::new();
+    transform.pos =
 
     program.uniform("perspective", perspective);
+    program.uniform("")
 
-    program.uniform("camera", camera.get_inverted_mat());
+    fbo.bind(&gl);
+    texture.bind_index(&gl, 0);
+    program.bind(&gl);
+
+
+
+    FBO::unbind(&gl);
+
+
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
-            egui::SidePanel::left("side_panel").show(egui_ctx, |ui| {
-                program.debug(ui, &UIRenderType::MUTABLE);
-                camera.debug(ui, &UIRenderType::MUTABLE);
-            });
-
             let window = egui::Window::new("Debug")
                 .collapsible(false)
                 .anchor(Align2::LEFT_TOP, (10.0, 10.0))
                 .title_bar(false)
                 .resizable(false);
+
+            window.show(egui_ctx, |ui| {
+                ui.label("Test")
+            });
         });
 
         match event {
@@ -114,18 +113,8 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
-                    program.bind(&gl);
-                    program.uniform("camera", camera.get_inverted_mat());
-                    program.update_uniforms(&gl);
-                    fbo.bind(&gl);
-
-                    texture.bind(&gl);
-                    vao.render(&gl);
-                    FBO::unbind(&gl);
-                    gl.clear_color(0.0, 0.0, 0.0, 0.0);
                     gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-                    fbo.enable_color_attachment(&gl, 0);
-                    vao.render(&gl);
+
                     egui_glow.paint(&window, &gl, list);
                     window.swap_buffers().unwrap();
                 }
@@ -133,8 +122,6 @@ fn main() -> Result<(), String> {
             Event::RedrawEventsCleared => {}
             Event::LoopDestroyed => {
                 egui_glow.destroy(&gl);
-                program.destroy(&gl);
-                texture.destroy(&gl);
                 vao.destroy(&gl);
                 vert_vbo.destroy(&gl);
                 uv_vbo.destroy(&gl);

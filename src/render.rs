@@ -12,7 +12,7 @@ pub mod texture;
 pub mod debug;
 pub mod transform;
 mod model;
-mod render_context;
+// pub mod render_context;
 //pub mod model;
 
 pub trait Renderable {

@@ -17,7 +17,7 @@ const TESSELATION_SHADER_INDEX: usize = 3;
 /// This enum represents all of the types that we can turn into a uniform value. To make something
 /// have the ability to become a uniform, implement `Into<UniformValue>` for that type.
 #[derive(Debug, Clone, Copy, PartialEq)]
-enum UniformValue {
+pub enum UniformValue {
     FLOAT(f32),
     INT(i32),
     UNSIGNED_INT(u32),
@@ -265,6 +265,7 @@ impl ShaderProgram {
 
     pub fn update_uniforms(&mut self, gl : &Context) {
         unsafe {
+            self.bind(gl);
             for (name, uniform) in self.uniforms.iter_mut() {
                 if uniform.location.is_none() {
                     uniform.location = Some(ShaderProgram::create_uniform_location(self.program.clone(), gl, name))
@@ -298,6 +299,16 @@ impl ShaderProgram {
                     gl.uniform_matrix_4_f32_slice(Some(&location), false, result)
                 }
             }
+        }
+    }
+
+    pub fn mutate_uniform(&mut self, uniform_name : &str, callback : impl FnOnce(&mut UniformValue)) {
+        if self.uniforms.contains_key(uniform_name) {
+            let arg = self.uniforms.get_mut(uniform_name).unwrap();
+            callback(&mut arg.current_value);
+            arg.hasChanged = true;
+        } else {
+            panic!("There is no uniform with the name '{}' to mutate.", uniform_name);
         }
     }
 

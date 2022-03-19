@@ -7,12 +7,13 @@ use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
 use crate::render::buffer::{FBO, VAO};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
-use crate::render::shader::ShaderProgram;
+use crate::render::shader::{ShaderProgram, UniformValue};
 use std::time::SystemTime;
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
 use egui::Align2;
+use crate::render::shader::UniformValue::TRANSFORM;
 
 fn main() -> Result<(), String> {
     let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Hello Triangle!");
@@ -49,30 +50,36 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    //The fbo that we are saving
+    // The fbo that we are saving
     let fbo = FBO::new(&gl)?
-        .with_texture_attachment(&gl, 64, 64, 1)?;
+       .with_texture_attachment(&gl,  240, 160, 0)?;
 
     let window_size = window.window().inner_size();
     let aspect_ratio =  (window_size.width as f32 / window_size.height as f32);
     println!("Aspect Ratio: {}", aspect_ratio);
     let perspective = perspective(Deg(90.0), aspect_ratio, 0.00001, 200.0);
 
-    let transform = Transform::new();
-    transform.pos =
+    let mut transform = Transform::new();
+    transform.pos = (0.0, 0.0, -1.0).into();
 
     program.uniform("perspective", perspective);
-    program.uniform("")
+    program.uniform("transform", transform);
+    program.uniform_debug_type("transform", MUTABLE);
 
-    fbo.bind(&gl);
-    texture.bind_index(&gl, 0);
-    program.bind(&gl);
+    println!("FBO complete: {}", fbo.complete(&gl));
 
+    // fbo.bind(&gl);
+    //
+    // texture.bind(&gl);
+    // program.bind(&gl);
+    // program.update_uniforms(&gl);
+    // texture.bind(&gl);
+    //
+    // unsafe { vao.render(&gl); }
+    //
+    // FBO::unbind(&gl);
 
-
-    FBO::unbind(&gl);
-
-
+    let quad_func = create_quad_scene(&gl);
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
@@ -83,7 +90,8 @@ fn main() -> Result<(), String> {
                 .resizable(false);
 
             window.show(egui_ctx, |ui| {
-                ui.label("Test")
+                ui.label("Test");
+                //program.debug(ui, &UIRenderType::MUTABLE)
             });
         });
 
@@ -113,7 +121,33 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
+
+                    program.mutate_uniform("transform", |uniform| {
+                        match uniform {
+                            TRANSFORM(t) => {t.rotation.y += 0.5}
+                            _ => {}
+                        }
+                    });
+
+                    //First Pass
+                    fbo.bind(&gl);
+                    gl.viewport(0, 0, 240, 160);
+                    gl.clear_color(0.1, 0.1, 0.1, 1.0);
                     gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+                    texture.bind(&gl);
+                    program.bind(&gl);
+                    program.update_uniforms(&gl);
+                    gl.enable(DEPTH_TEST);
+                    unsafe { vao.render(&gl); }
+
+                    //Second Pass
+                    FBO::unbind(&gl);
+                    gl.viewport(0, 0, window_size.width as i32, window_size.height as i32);
+                    gl.clear_color(1.0, 1.0, 1.0, 1.0);
+                    gl.clear(glow::COLOR_BUFFER_BIT);
+                    fbo.enable_color_attachment(&gl, 0);
+                    gl.disable(DEPTH_TEST);
+                    quad_func(&gl);
 
                     egui_glow.paint(&window, &gl, list);
                     window.swap_buffers().unwrap();
@@ -125,9 +159,61 @@ fn main() -> Result<(), String> {
                 vao.destroy(&gl);
                 vert_vbo.destroy(&gl);
                 uv_vbo.destroy(&gl);
+                program.destroy(&gl);
+                fbo.destroy(&gl);
             }
         }
     });
 
     Ok(())
+}
+
+fn draw_perspective_scene(gl : &Context) {
+
+}
+
+fn create_quad_scene(gl : &Context) -> impl Fn(&Context) {
+    let verts : Vec<Vector2<f32>> = vec![
+        Vector2::new(-1.0, 1.0),
+        Vector2::new(1.0, 1.0),
+        Vector2::new(-1.0, -1.0),
+        Vector2::new(1.0, -1.0),
+    ];
+
+    let uvs : Vec<Vector2<f32>> = vec![
+        Vector2::new(0.0, 0.0),
+        Vector2::new(1.0, 0.0),
+        Vector2::new(0.0, 1.0),
+        Vector2::new(1.0, 1.0),
+    ];
+
+    let indices = vec![
+        0, 2, 1,
+        1, 2, 3
+    ];
+
+    let mut vert_vbo = VBO::new(gl)
+        .expect("Unable to make vertex vbo for the Quad scene.");
+    vert_vbo.load_vec2s(gl, verts);
+
+    let mut uv_vbo = VBO::new(gl)
+        .expect("Unable to make uv vbo for the Quad scene.");
+    uv_vbo.load_vec2s(gl, uvs);
+
+    let mut vao = VAO::new(gl)
+        .expect("Unable to make vao for the Quad scene.");
+    vao.addIndexBuffer(gl, indices);
+    vao.add_vbo(gl, 0, &vert_vbo);
+    vao.add_vbo(gl, 1, &uv_vbo);
+
+    let mut program = ShaderProgram::new(&gl)
+        .expect("Shader program could not be created for quad render.");
+    program.load_vertex_shader(&gl, "quad_render/quad_shader_vert.glsl");
+    program.load_fragment_shader(&gl, "quad_render/quad_shader_frag.glsl");
+    program.link(&gl);
+
+    move |gl| {
+        program.bind(gl);
+        unsafe { vao.render(gl); }
+    }
 }

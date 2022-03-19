@@ -279,10 +279,13 @@ impl FBO {
                 let texture = gl.create_texture()?;
                 gl.bind_texture(TEXTURE_2D, Some(texture));
                 gl.tex_image_2d(TEXTURE_2D, 0, SRGB as i32, width as i32, height as i32, 0, RGB, UNSIGNED_BYTE, None);
+                gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MAG_FILTER, NEAREST as i32);
+                gl.tex_parameter_i32(TEXTURE_2D, TEXTURE_MIN_FILTER, NEAREST as i32);
                 gl.bind_texture(TEXTURE_2D, None);
                 gl.framebuffer_texture_2d(FRAMEBUFFER, COLOR_ATTACHMENT0 + color_attachment as u32, TEXTURE_2D, Some(texture), 0);
 
                 self.color_attachments[color_attachment as usize] = Some(texture);
+
 
                 FBO::unbind(gl);
                 Ok(self)
@@ -295,6 +298,15 @@ impl FBO {
             unsafe { gl.bind_texture(TEXTURE_2D, self.color_attachments[attachment]); }
         } else {
             panic!("Color attachment '{}' has not been setup for this FBO", attachment)
+        }
+    }
+
+    pub fn complete(&self, gl : &Context) -> bool {
+        unsafe {
+            self.bind(gl);
+            let r = gl.check_framebuffer_status(FRAMEBUFFER) == FRAMEBUFFER_COMPLETE;
+            FBO::unbind(gl);
+            r
         }
     }
 

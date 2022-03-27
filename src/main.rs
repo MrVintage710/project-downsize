@@ -52,7 +52,7 @@ fn main() -> Result<(), String> {
 
     // The fbo that we are saving
     let fbo = FBO::new(&gl)?
-       .with_texture_attachment(&gl,  240, 160, 0)?;
+       .with_texture_attachment(&gl,  240/2, 160/2, 0)?;
 
     let window_size = window.window().inner_size();
     let aspect_ratio =  (window_size.width as f32 / window_size.height as f32);
@@ -131,7 +131,7 @@ fn main() -> Result<(), String> {
 
                     //First Pass
                     fbo.bind(&gl);
-                    gl.viewport(0, 0, 240, 160);
+                    gl.viewport(0, 0, 240/2, 160/2);
                     gl.clear_color(0.1, 0.1, 0.1, 1.0);
                     gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
                     texture.bind(&gl);

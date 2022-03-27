@@ -259,7 +259,6 @@ pub struct FBO {
 }
 
 impl FBO {
-
     pub fn new(gl : &Context) -> Result<Self, String> {
         unsafe {
             let fbo = gl.create_framebuffer()?;

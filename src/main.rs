@@ -32,11 +32,21 @@ fn main() -> Result<(), String> {
         Vector2::new(1.0, 1.0)
     ];
 
+    let norm : Vec<Vector3<f32>> = vec![
+        Vector3::new(0.0, 0.0, 1.0),
+        Vector3::new(0.0, 0.0, 1.0),
+        Vector3::new(0.0, 0.0, 1.0),
+        Vector3::new(0.0, 0.0, 1.0),
+    ];
+
     let mut vert_vbo = VBO::new(&gl).unwrap();
     vert_vbo.load_vec3s(&gl, verts);
 
     let mut uv_vbo = VBO::new(&gl)?;
     uv_vbo.load_vec2s(&gl, uvs);
+
+    let mut norm_vbo = VBO::new(&gl)?;
+    norm_vbo.load_vec3s(&gl, norm);
 
     let mut vao = VAO::new(&gl).unwrap();
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);

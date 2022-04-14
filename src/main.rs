@@ -52,6 +52,7 @@ fn main() -> Result<(), String> {
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);
     vao.add_vbo(&gl ,0, &vert_vbo);
     vao.add_vbo(&gl, 1, &uv_vbo);
+    vao.add_vbo(&gl, 2, &norm_vbo);
 
     let texture = Texture::new(&gl, "copper_block.png");
 

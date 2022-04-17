@@ -11,7 +11,8 @@ pub mod shader;
 pub mod texture;
 pub mod debug;
 pub mod transform;
-mod model;
+pub mod model;
+pub mod downsize;
 // pub mod render_context;
 //pub mod model;
 

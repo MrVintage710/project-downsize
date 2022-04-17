@@ -141,22 +141,23 @@ fn main() -> Result<(), String> {
                     });
 
                     //First Pass
-                    fbo.bind(&gl);
-                    gl.viewport(0, 0, 240/2, 160/2);
-                    gl.clear_color(0.1, 0.1, 0.1, 1.0);
-                    gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-                    texture.bind(&gl);
-                    program.bind(&gl);
-                    program.update_uniforms(&gl);
-                    gl.enable(DEPTH_TEST);
-                    unsafe { vao.render(&gl); }
+                    // fbo.bind(&gl);
+                    // gl.viewport(0, 0, 240/2, 160/2);
+                    // gl.clear_color(0.1, 0.1, 0.1, 1.0);
+                    // gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+                    // texture.bind(&gl);
+                    // program.bind(&gl);
+                    // program.update_uniforms(&gl);
+                    // gl.enable(DEPTH_TEST);
+                    // unsafe { vao.render(&gl); }
 
                     //Second Pass
-                    FBO::unbind(&gl);
+                    //FBO::unbind(&gl);
                     gl.viewport(0, 0, window_size.width as i32, window_size.height as i32);
                     gl.clear_color(1.0, 1.0, 1.0, 1.0);
                     gl.clear(glow::COLOR_BUFFER_BIT);
-                    fbo.enable_color_attachment(&gl, 0);
+                    //fbo.enable_color_attachment(&gl, 0);
+                    texture.bind(&gl);
                     gl.disable(DEPTH_TEST);
                     quad_func(&gl);
 

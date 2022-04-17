@@ -12,8 +12,6 @@ impl FrameBufferBuilder {
         self.color_attachments[color_attachment] = Some((width, height));
         self
     }
-
-
 }
 
 //input: 3D models

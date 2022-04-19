@@ -13,6 +13,7 @@ use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
 use egui::Align2;
+use crate::render::downsize::Downsize;
 use crate::render::shader::UniformValue::TRANSFORM;
 
 fn main() -> Result<(), String> {
@@ -61,38 +62,24 @@ fn main() -> Result<(), String> {
     program.load_fragment_shader(&gl, "static_frag.glsl");
     program.link(&gl);
 
-    // The fbo that we are saving
-    let fbo = FBO::new(&gl)?
-       .with_texture_attachment(&gl,  240/2, 160/2, 0)?;
-
     let window_size = window.window().inner_size();
     let aspect_ratio =  (window_size.width as f32 / window_size.height as f32);
     println!("Aspect Ratio: {}", aspect_ratio);
-    let perspective = perspective(Deg(90.0), aspect_ratio, 0.00001, 200.0);
+    let perspective_matrix = perspective(Deg(45.0), aspect_ratio, 0.00001, 200.0);
 
     let mut transform = Transform::new();
     transform.pos = (0.0, 0.0, -1.0).into();
 
-    program.uniform("perspective", perspective);
+    program.uniform("perspective", perspective_matrix);
     program.uniform("transform", transform);
     program.uniform_debug_type("transform", MUTABLE);
 
-    println!("FBO complete: {}", fbo.complete(&gl));
-
-    // fbo.bind(&gl);
-    //
-    // texture.bind(&gl);
-    // program.bind(&gl);
-    // program.update_uniforms(&gl);
-    // texture.bind(&gl);
-    //
-    // unsafe { vao.render(&gl); }
-    //
-    // FBO::unbind(&gl);
-
     let quad_func = create_quad_scene(&gl);
 
-    event_loop.run(move |event, _, control_flow| {
+    let mut downsize = Downsize::new(&gl, 240);
+    let mut should_animate = true;
+
+    event_loop.run(move |event, test, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
             let window = egui::Window::new("Debug")
                 .collapsible(false)
@@ -102,7 +89,9 @@ fn main() -> Result<(), String> {
 
             window.show(egui_ctx, |ui| {
                 ui.label("Test");
-                //program.debug(ui, &UIRenderType::MUTABLE)
+                downsize.debug(ui, &UIRenderType::MUTABLE);
+                ui.separator();
+                ui.checkbox(&mut should_animate, "Should Animate")
             });
         });
 
@@ -132,34 +121,26 @@ fn main() -> Result<(), String> {
             }
             Event::RedrawRequested(_) => {
                 unsafe {
+                    gl.clear(COLOR_BUFFER_BIT);
 
-                    program.mutate_uniform("transform", |uniform| {
-                        match uniform {
-                            TRANSFORM(t) => {t.rotation.y += 0.5}
-                            _ => {}
-                        }
+                    if should_animate {
+                        program.mutate_uniform("transform", |uniform| {
+                            match uniform {
+                                TRANSFORM(t) => {t.rotation.y += 0.5}
+                                _ => {}
+                            }
+                        });
+                    }
+
+                    downsize.render(&gl, window.window().inner_size(), |gl, aspect_ratio| {
+                        let pers = perspective(Deg(90.0), aspect_ratio, 0.00001, 200.0);
+                        program.uniform("perspective", pers);
+
+                        texture.bind(&gl);
+                        program.bind(&gl);
+                        program.update_uniforms(&gl);
+                        unsafe { vao.render(&gl); }
                     });
-
-                    //First Pass
-                    // fbo.bind(&gl);
-                    // gl.viewport(0, 0, 240/2, 160/2);
-                    // gl.clear_color(0.1, 0.1, 0.1, 1.0);
-                    // gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
-                    // texture.bind(&gl);
-                    // program.bind(&gl);
-                    // program.update_uniforms(&gl);
-                    // gl.enable(DEPTH_TEST);
-                    // unsafe { vao.render(&gl); }
-
-                    //Second Pass
-                    //FBO::unbind(&gl);
-                    gl.viewport(0, 0, window_size.width as i32, window_size.height as i32);
-                    gl.clear_color(1.0, 1.0, 1.0, 1.0);
-                    gl.clear(glow::COLOR_BUFFER_BIT);
-                    //fbo.enable_color_attachment(&gl, 0);
-                    texture.bind(&gl);
-                    gl.disable(DEPTH_TEST);
-                    quad_func(&gl);
 
                     egui_glow.paint(&window, &gl, list);
                     window.swap_buffers().unwrap();
@@ -172,7 +153,7 @@ fn main() -> Result<(), String> {
                 vert_vbo.destroy(&gl);
                 uv_vbo.destroy(&gl);
                 program.destroy(&gl);
-                fbo.destroy(&gl);
+                downsize.delete(&gl);
             }
         }
     });

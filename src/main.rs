@@ -74,8 +74,6 @@ fn main() -> Result<(), String> {
     program.uniform("transform", transform);
     program.uniform_debug_type("transform", MUTABLE);
 
-    let quad_func = create_quad_scene(&gl);
-
     let mut downsize = Downsize::new(&gl, 240);
     let mut should_animate = true;
 
@@ -159,54 +157,4 @@ fn main() -> Result<(), String> {
     });
 
     Ok(())
-}
-
-fn draw_perspective_scene(gl : &Context) {
-
-}
-
-fn create_quad_scene(gl : &Context) -> impl Fn(&Context) {
-    let verts : Vec<Vector2<f32>> = vec![
-        Vector2::new(-1.0, 1.0),
-        Vector2::new(1.0, 1.0),
-        Vector2::new(-1.0, -1.0),
-        Vector2::new(1.0, -1.0),
-    ];
-
-    let uvs : Vec<Vector2<f32>> = vec![
-        Vector2::new(0.0, 0.0),
-        Vector2::new(1.0, 0.0),
-        Vector2::new(0.0, 1.0),
-        Vector2::new(1.0, 1.0),
-    ];
-
-    let indices = vec![
-        0, 2, 1,
-        1, 2, 3
-    ];
-
-    let mut vert_vbo = VBO::new(gl)
-        .expect("Unable to make vertex vbo for the Quad scene.");
-    vert_vbo.load_vec2s(gl, verts);
-
-    let mut uv_vbo = VBO::new(gl)
-        .expect("Unable to make uv vbo for the Quad scene.");
-    uv_vbo.load_vec2s(gl, uvs);
-
-    let mut vao = VAO::new(gl)
-        .expect("Unable to make vao for the Quad scene.");
-    vao.addIndexBuffer(gl, indices);
-    vao.add_vbo(gl, 0, &vert_vbo);
-    vao.add_vbo(gl, 1, &uv_vbo);
-
-    let mut program = ShaderProgram::new(&gl)
-        .expect("Shader program could not be created for quad render.");
-    program.load_vertex_shader(&gl, "quad_render/quad_shader_vert.glsl");
-    program.load_fragment_shader(&gl, "quad_render/quad_shader_frag.glsl");
-    program.link(&gl);
-
-    move |gl| {
-        program.bind(gl);
-        unsafe { vao.render(gl); }
-    }
 }

@@ -1,6 +1,7 @@
 mod render;
 mod util;
 
+use std::process::exit;
 use glow::*;
 use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
 use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
@@ -39,6 +40,7 @@ fn main() -> Result<(), String> {
         Vector3::new(0.0, 0.0, 1.0),
     ];
 
+    // todo()
     let mut vert_vbo = VBO::new(&gl).unwrap();
     vert_vbo.load_vec3s(&gl, verts);
 
@@ -52,6 +54,8 @@ fn main() -> Result<(), String> {
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);
     vao.add_vbo(&gl ,0, &vert_vbo);
     vao.add_vbo(&gl, 1, &uv_vbo);
+
+    // todo()
 
     let texture = Texture::new(&gl, "copper_block.png");
 
@@ -90,6 +94,17 @@ fn main() -> Result<(), String> {
     // FBO::unbind(&gl);
 
     let quad_func = create_quad_scene(&gl);
+
+    // load object here :)
+    ///////////
+    use crate::render::model::OBJModel;
+    use obj::Obj;
+
+    let cube: Obj =  OBJModel::new(&gl, "cube.obj");
+    println!("{:?}",cube);
+    ///////////
+
+    exit(123); // TODO REMOVE AFTER OBJECTS LOAD
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {

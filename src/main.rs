@@ -151,7 +151,7 @@ fn main() -> Result<(), String> {
                 vert_vbo.destroy(&gl);
                 uv_vbo.destroy(&gl);
                 program.destroy(&gl);
-                downsize.delete(&gl);
+                downsize.destroy(&gl);
             }
         }
     });

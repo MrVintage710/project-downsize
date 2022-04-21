@@ -82,7 +82,7 @@ impl Downsize {
 
         if new_size.width != self.last_width || new_size.height != self.last_height || self.should_recalc {
             unsafe {
-                println!("RECALCULATING TEXTURE! {}", new_height);
+                //println!("RECALCULATING TEXTURE! {}", new_height);
                 gl.bind_texture(TEXTURE_2D, Some(self.color_attachment));
                 gl.tex_image_2d(TEXTURE_2D, 0, SRGB as i32, new_width as i32, new_height as i32, 0, RGB, UNSIGNED_BYTE, None);
                 gl.bind_texture(TEXTURE_2D, Some(self.depth_attachment));
@@ -96,16 +96,15 @@ impl Downsize {
         (new_width, new_height, aspect_ratio)
     }
 
-    pub fn delete(&self, gl : &Context) {
+    pub fn destroy(&self, gl : &Context) {
         unsafe { gl.delete_framebuffer(self.fbo) }
     }
 }
 
 impl Debugable for Downsize {
     fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
-        let begining = self.pixel_density;
+        let beginning = self.pixel_density;
         let responce = ui.add(DragValue::new(&mut self.pixel_density));
-        if begining != self.pixel_density {self.should_recalc = true}
+        if beginning != self.pixel_density {self.should_recalc = true}
     }
 }
-

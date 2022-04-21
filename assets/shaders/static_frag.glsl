@@ -6,7 +6,6 @@ in vec4 vertex_color;
 in vec2 uv_pos;
 
 uniform sampler2D our_texture;
-uniform vec3 color_shift;
 
 void main() {
 //    frag_color = vec4(1.0, 1.0, 1.0, 1.0);

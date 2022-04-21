@@ -54,6 +54,7 @@ fn main() -> Result<(), String> {
     vao.addIndexBuffer(&gl, vec![0, 2, 1, 1, 2, 3]);
     vao.add_vbo(&gl ,0, &vert_vbo);
     vao.add_vbo(&gl, 1, &uv_vbo);
+    vao.add_vbo(&gl, 2, &norm_vbo);
 
     // todo()
 
@@ -103,8 +104,6 @@ fn main() -> Result<(), String> {
     let cube: Obj =  OBJModel::new(&gl, "cube.obj");
     println!("{:?}",cube);
     ///////////
-
-    exit(123); // TODO REMOVE AFTER OBJECTS LOAD
 
     event_loop.run(move |event, _, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {

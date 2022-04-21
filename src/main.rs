@@ -17,7 +17,7 @@ use crate::render::downsize::Downsize;
 use crate::render::shader::UniformValue::TRANSFORM;
 
 fn main() -> Result<(), String> {
-    let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Hello Triangle!");
+    let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Downsize");
 
     let verts : Vec<Vector3<f32>> = vec![
         Vector3::new(-0.5, 0.5, 0.0),
@@ -68,14 +68,18 @@ fn main() -> Result<(), String> {
     let perspective_matrix = perspective(Deg(45.0), aspect_ratio, 0.00001, 200.0);
 
     let mut transform = Transform::new();
-    transform.pos = (0.0, 0.0, -1.0).into();
+    transform.pos = (0.0, 0.0, 0.0).into();
+
+    let mut camera_transform = Transform::new();
+    camera_transform.origin = (0.0, 0.0, 1.0).into();
 
     program.uniform("perspective", perspective_matrix);
     program.uniform("transform", transform);
-    program.uniform_debug_type("transform", MUTABLE);
+    program.uniform("camera", camera_transform.invert());
+    program.uniform_debug_type("camera", MUTABLE);
 
     let mut downsize = Downsize::new(&gl, 240);
-    let mut should_animate = true;
+    let mut should_animate = false;
 
     event_loop.run(move |event, test, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
@@ -88,6 +92,7 @@ fn main() -> Result<(), String> {
             window.show(egui_ctx, |ui| {
                 ui.label("Test");
                 downsize.debug(ui, &UIRenderType::MUTABLE);
+                program.debug(ui, &UIRenderType::MUTABLE);
                 ui.separator();
                 ui.checkbox(&mut should_animate, "Should Animate")
             });

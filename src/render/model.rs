@@ -1,11 +1,15 @@
 use crate::render::buffer::{VBO, VAO};
 use glow::Context;
-use obj::Obj;
+
+use std::fs::File;
+use std::io::BufReader;
+use obj::{load_obj, Obj, ObjResult, TexturedVertex};
+
 use std::path::{Path, PathBuf};
 use crate::render::texture::Texture;
 use crate::render::shader::ShaderProgram;
 
-struct OBJModel {
+pub struct OBJModel {
     texture : Option<Texture>,
     program : ShaderProgram,
     vao : VAO,
@@ -14,13 +18,14 @@ struct OBJModel {
 }
 
 impl OBJModel {
-
-    pub fn new(gl : &Context, file_name : &str) {
+    pub fn new(gl : &Context, file_name : &str) -> ObjResult<Obj<TexturedVertex, u32>> {
         let path = Path::new("")
             .join("assets")
             .join("models")
             .join(file_name);
-        let obj = Obj::load(path.as_path());
-    }
 
+        let input = BufReader::new(File::open(path)?);
+        let model: Obj<TexturedVertex, u32> = load_obj(input)?;
+        Ok(model)
+    }
 }

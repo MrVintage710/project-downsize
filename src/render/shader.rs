@@ -25,7 +25,7 @@ pub enum UniformValue {
     VEC3(Vector3<f32>),
     VEC2(Vector2<f32>),
     MAT4(Matrix4<f32>),
-    TRANSFORM(Transform)
+    TRANSFORM(Transform),
 }
 
 /// `Into<UniformValue>` implementation for `Vector4<f32>`. This is so that the type can be used in the
@@ -111,9 +111,9 @@ impl UniformState {
 
     }
 
-    pub fn get(&mut self) -> &UniformValue {
+    pub fn get(&mut self) -> &mut UniformValue {
         self.hasChanged = false;
-        &self.current_value
+        &mut self.current_value
     }
 
     pub fn needs_update(&self) -> bool {
@@ -272,13 +272,13 @@ impl ShaderProgram {
                 }
                 if uniform.needs_update() {
                     //println!("Updating uniform: {}", name);
-                    ShaderProgram::load_uniform(gl, &uniform.location.unwrap(), &uniform.get());
+                    ShaderProgram::load_uniform(gl, &uniform.location.unwrap(), uniform.get());
                 }
             }
         }
     }
 
-    fn load_uniform(gl : &Context, location : &NativeUniformLocation, value : &UniformValue) {
+    fn load_uniform(gl : &Context, location : &NativeUniformLocation, value : &mut UniformValue) {
         unsafe {
             match value {
                 VEC4(vec) => gl.uniform_4_f32(Some(&location), vec.x, vec.y, vec.z, vec.w),

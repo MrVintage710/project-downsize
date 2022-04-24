@@ -8,7 +8,7 @@ use crate::render::buffer::{FBO, VAO};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use crate::render::shader::{ShaderProgram, UniformValue};
-use std::time::SystemTime;
+use std::time::{Instant, SystemTime};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
@@ -68,18 +68,21 @@ fn main() -> Result<(), String> {
     let perspective_matrix = perspective(Deg(45.0), aspect_ratio, 0.00001, 200.0);
 
     let mut transform = Transform::new();
-    transform.pos = (0.0, 0.0, 0.0).into();
 
     let mut camera_transform = Transform::new();
-    camera_transform.origin = (0.0, 0.0, 1.0).into();
+    camera_transform.set_pos((0.0, 0.0, -1.0));
 
     program.uniform("perspective", perspective_matrix);
     program.uniform("transform", transform);
-    program.uniform("camera", camera_transform.invert());
+    program.uniform_debug_type("transform", MUTABLE);
+    program.uniform("camera", camera_transform);
     program.uniform_debug_type("camera", MUTABLE);
 
     let mut downsize = Downsize::new(&gl, 240);
     let mut should_animate = false;
+
+    let mut last_frame_end = Instant::now();
+    let mut current_frame_start = last_frame_end.elapsed();
 
     event_loop.run(move |event, test, control_flow| {
         let (test, list) = egui_glow.run(window.window(), |egui_ctx| {
@@ -90,8 +93,15 @@ fn main() -> Result<(), String> {
                 .resizable(false);
 
             window.show(egui_ctx, |ui| {
-                ui.label("Test");
-                downsize.debug(ui, &UIRenderType::MUTABLE);
+                ui.horizontal(|ui| {
+                    ui.label(format!("FPS: {:.2}", 1.0 / current_frame_start.as_secs_f64()));
+                });
+                ui.separator();
+
+                ui.horizontal(|ui| {
+                    ui.label("Pixel Density:");
+                    downsize.debug(ui, &UIRenderType::MUTABLE);
+                });
                 program.debug(ui, &UIRenderType::MUTABLE);
                 ui.separator();
                 ui.checkbox(&mut should_animate, "Should Animate")
@@ -123,20 +133,23 @@ fn main() -> Result<(), String> {
                 window.window().request_redraw()
             }
             Event::RedrawRequested(_) => {
+                current_frame_start = last_frame_end.elapsed();
+                last_frame_end = Instant::now();
+
                 unsafe {
                     gl.clear(COLOR_BUFFER_BIT);
 
                     if should_animate {
                         program.mutate_uniform("transform", |uniform| {
                             match uniform {
-                                TRANSFORM(t) => {t.rotation.y += 0.5}
+                                TRANSFORM(t) => {t.add_rot((0.0, 0.5, 0.0));}
                                 _ => {}
                             }
                         });
                     }
 
                     downsize.render(&gl, window.window().inner_size(), |gl, aspect_ratio| {
-                        let pers = perspective(Deg(90.0), aspect_ratio, 0.00001, 200.0);
+                        let pers = perspective(Deg(80.0), aspect_ratio, 0.00001, 200.0);
                         program.uniform("perspective", pers);
 
                         texture.bind(&gl);

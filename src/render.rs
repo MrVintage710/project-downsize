@@ -14,6 +14,7 @@ pub mod debug;
 pub mod transform;
 pub mod model;
 pub mod downsize;
+pub mod lighting;
 
 pub trait Renderable {
     unsafe fn render(&self, gl : &Context);

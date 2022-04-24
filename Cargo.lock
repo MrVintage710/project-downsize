@@ -1278,7 +1278,6 @@ dependencies = [
  "obj",
  "png",
  "serde",
- "transform-matrix",
 ]
 
 [[package]]
@@ -1529,12 +1528,6 @@ checksum = "a31142970826733df8241ef35dc040ef98c679ab14d7c3e54d827099b3acecaa"
 dependencies = [
  "serde",
 ]
-
-[[package]]
-name = "transform-matrix"
-version = "0.1.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a5ca75166e204111bb4a67bc16ca908268c15042b6513d33667b505428f32460"
 
 [[package]]
 name = "ttf-parser"

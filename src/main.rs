@@ -79,7 +79,7 @@ fn main() -> Result<(), String> {
     program.uniform_debug_type("camera", MUTABLE);
 
     let mut downsize = Downsize::new(&gl, 240);
-    let mut should_animate = false;
+    let mut should_animate = true;
 
     let mut last_frame_end = Instant::now();
     let mut current_frame_start = last_frame_end.elapsed();

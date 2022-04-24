@@ -293,7 +293,7 @@ impl ShaderProgram {
                 UniformValue::INT(_) => {}
                 UniformValue::UNSIGNED_INT(_) => {}
                 UniformValue::TRANSFORM(transform) => {
-                    let mat = transform.get_mat();
+                    let mat = transform.calc_mat();
                     let slice : [[f32; 4]; 4] = mat.clone().into();
                     let result = &slice.concat();
                     gl.uniform_matrix_4_f32_slice(Some(&location), false, result)

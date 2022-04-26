@@ -102,10 +102,15 @@ impl Downsize {
 }
 
 impl Debugable for Downsize {
-    fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
-        let begining = self.pixel_density;
-        let responce = ui.add(DragValue::new(&mut self.pixel_density));
-        if begining != self.pixel_density {self.should_recalc = true}
+    fn debug(&mut self, ui: &mut Ui, enabled: bool) -> bool {
+        let res = ui.add(DragValue::new(&mut self.pixel_density)).changed();
+        if res {self.should_recalc = true};
+        res
     }
+    // fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
+    //     let begining = self.pixel_density;
+    //     let responce = ui.add(DragValue::new(&mut self.pixel_density));
+    //     if begining != self.pixel_density {self.should_recalc = true}
+    // }
 }
 

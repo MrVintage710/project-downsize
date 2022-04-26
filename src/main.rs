@@ -7,7 +7,7 @@ use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
 use crate::render::buffer::{FBO, VAO};
 use glutin::event::{Event, WindowEvent};
 use glutin::event_loop::ControlFlow;
-use crate::render::shader::{ShaderBuilder, ShaderProgram, UniformValue};
+use crate::render::shader::{ShaderBuilder, UniformValue};
 use std::time::{Instant, SystemTime};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
@@ -57,26 +57,10 @@ fn main() -> Result<(), String> {
 
         let texture = Texture::new(&render_context.gl, "copper_block.png");
 
-        let mut program = ShaderProgram::new(&render_context.gl)?;
-        program.load_vertex_shader(&render_context.gl, "static_vert.glsl");
-        program.load_fragment_shader(&render_context.gl, "static_frag.glsl");
-        program.link(&render_context.gl);
-
-        let window_size = render_context.window.window().inner_size();
-        let aspect_ratio =  (window_size.width as f32 / window_size.height as f32);
-        println!("Aspect Ratio: {}", aspect_ratio);
-        let perspective_matrix = perspective(Deg(45.0), aspect_ratio, 0.00001, 200.0);
-
         let mut transform = Transform::new();
 
         let mut camera_transform = Transform::new();
         camera_transform.set_pos((0.0, 0.0, -1.0));
-
-        // program.uniform("perspective", perspective_matrix);
-        // program.uniform("transform", transform);
-        // program.uniform_debug_type("transform", MUTABLE);
-        // program.uniform("camera", camera_transform);
-        // program.uniform_debug_type("camera", MUTABLE);
 
         ///Testing new Shader Code
         let mut shdr = ShaderBuilder::new()
@@ -86,7 +70,6 @@ fn main() -> Result<(), String> {
 
         shdr.add_uniform("camera", &mut camera_transform);
         shdr.add_uniform("transform", &mut transform);
-
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
         let mut should_animate = true;
@@ -110,10 +93,9 @@ fn main() -> Result<(), String> {
 
                     ui.horizontal(|ui| {
                         ui.label("Pixel Density:");
-                        downsize.debug(ui, &UIRenderType::MUTABLE);
+                        downsize.debug(ui, true);
                     });
-                    camera_transform.debug(ui, &UIRenderType::MUTABLE);
-                    camera_transform.get_mat();
+                    camera_transform.debug(ui, false);
                     ui.separator();
                     ui.checkbox(&mut should_animate, "Should Animate")
                 });
@@ -151,12 +133,7 @@ fn main() -> Result<(), String> {
                         render_context.gl.clear(COLOR_BUFFER_BIT);
 
                         if should_animate {
-                            // program.mutate_uniform("transform", |uniform| {
-                            //     match uniform {
-                            //         TRANSFORM(t) => {t.add_rot((0.0, 0.5, 0.0));}
-                            //         _ => {}
-                            //     }
-                            // });
+                            transform.add_rot((0.0, 0.5, 0.0));
                         }
 
                         downsize.render(&render_context.gl, render_context.window.window().inner_size(), |gl, aspect_ratio| {
@@ -178,8 +155,8 @@ fn main() -> Result<(), String> {
                     vao.destroy(&render_context.gl);
                     vert_vbo.destroy(&render_context.gl);
                     uv_vbo.destroy(&render_context.gl);
-                    program.destroy(&render_context.gl);
                     downsize.delete(&render_context.gl);
+                    shdr.delete();
                 }
             }
         });

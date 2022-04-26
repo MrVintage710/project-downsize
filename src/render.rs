@@ -123,6 +123,6 @@ pub fn createGlutinContext<'a>(title : &str) -> (Rc<RenderContext>, &'a str, Eve
             println!("[GL ERROR][{}]:{}", severity_text, message)
         });
 
-        (Rc::new(RenderContext{gl, window }), "#version 410", event_loop, egui_glow)
+        (Rc::new(RenderContext{gl, window }) , "#version 410", event_loop, egui_glow)
     }
 }

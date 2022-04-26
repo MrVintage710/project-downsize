@@ -4,7 +4,7 @@ use egui::emath::Numeric;
 use crate::render::debug::{Debugable, UIRenderType};
 use egui::Ui;
 use cgmath::Rotation3;
-use crate::render::shader::{ShaderUniformHandler, Uniform};
+use crate::render::shader::{ShaderUniformHandler, Uniform, UniformValue};
 use crate::util::math::wrap_vec3;
 use crate::util::variable::UpdateVariable;
 
@@ -37,7 +37,7 @@ impl Transform {
             self.mat = self.calc_mat();
             self.mat_has_changed = false;
             if self.uniform_handler.is_some() {
-                self.uniform_handler.unwrap().update_uniform(Matrix4(self.mat))
+                self.uniform_handler.as_ref().unwrap().update_uniform(UniformValue::MAT4(self.mat))
             }
         }
 
@@ -107,17 +107,14 @@ impl Into<Matrix4<f32>> for Transform {
 
 impl Uniform for Transform {
     fn provide_handle(&mut self, handle: ShaderUniformHandler) {
+        handle.update_uniform(self.get_mat());
         unsafe { self.uniform_handler = Some(handle) }
-    }
-
-    fn get_id(&self) -> String {
-        "transform".to_owned()
     }
 }
 
 impl Debugable for Transform {
     fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
-        ui.vertical(|ui|{
+        let test = ui.vertical(|ui|{
             ui.horizontal(|ui| {
                 ui.label("Position");
                 self.pos.debug(ui, render_type)

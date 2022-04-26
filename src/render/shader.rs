@@ -437,7 +437,8 @@ impl ShaderBuilder {
                 frag_shader,
                 geo_shader,
                 tes_shader,
-                render_context: Rc::clone(render_context)
+                render_context: Rc::clone(render_context),
+                uniform_map: HashMap::new()
             })
         }
     }
@@ -450,23 +451,23 @@ impl ShaderBuilder {
 
             //Test parsing stuff
 
-            // let apt = ShaderStage::parse(data.clone());
-            // if let Err(parse_error) = apt {return Err(GLSL_PARSE_ERROR(parse_error))}
-            // let mut apt = apt.unwrap();
-            // for i in apt.0 {
-            //     if let ExternalDeclaration::Declaration(mut dec) = i {
-            //         if let Declaration::InitDeclaratorList(mut list) = dec {
-            //             let type_qualifier = list.head.ty.qualifier.expect("No qualifiers").qualifiers.0;
-            //             let type_qualifier_spec = type_qualifier.get(0).unwrap();
-            //
-            //             if let TypeQualifierSpec::Storage(qualifer) = type_qualifier_spec {
-            //                 if let StorageQualifier::Uniform = qualifer {
-            //                     println!("{:?} {:?} {:?}", qualifer, list.head.ty.ty.ty, list.head.name.expect("No name").0);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
+            let apt = ShaderStage::parse(data.clone());
+            if let Err(parse_error) = apt {return Err(GLSL_PARSE_ERROR(parse_error))}
+            let mut apt = apt.unwrap();
+            for i in apt.0 {
+                if let ExternalDeclaration::Declaration(mut dec) = i {
+                    if let Declaration::InitDeclaratorList(mut list) = dec {
+                        let type_qualifier = list.head.ty.qualifier.expect("No qualifiers").qualifiers.0;
+                        let type_qualifier_spec = type_qualifier.get(0).unwrap();
+
+                        if let TypeQualifierSpec::Storage(qualifer) = type_qualifier_spec {
+                            if let StorageQualifier::Uniform = qualifer {
+                                println!("{:?} {:?} {:?}", qualifer, list.head.ty.ty.ty, list.head.name.expect("No name").0);
+                            }
+                        }
+                    }
+                }
+            }
 
             gl.shader_source(shader, data.as_str());
             gl.compile_shader(shader);
@@ -497,21 +498,18 @@ pub struct Shader{
     frag_shader : NativeShader,
     geo_shader : Option<NativeShader>,
     tes_shader : Option<NativeShader>,
-    render_context : Rc<RenderContext>
-    //uniform_map : HashMap<String, Rc<ShaderUniformHandler<'a>>>
+    render_context : Rc<RenderContext>,
+    uniform_map : HashMap<String, NativeUniformLocation>
 }
 
 impl Shader {
-    pub fn add_uniform<T>(&self, uniform : &mut T) -> ShaderResult<()> where T : Uniform {
-        //if self.uniform_map.contains_key(uniform_name) {return Err(UNIFORM_ALREADY_EXISTS)}
-
+    pub fn add_uniform<T>(&mut self, uniform_name : &str, uniform : &mut T) -> ShaderResult<()> where T : Uniform {
         unsafe {
-            let u = self.render_context.gl.get_uniform_location(self.program, uniform_name);
-            if u.is_none() { return Err(UNIFORM_LOCATION_NOT_FOUND)}
+            let uniform_location = self.get_uniform_location(uniform_name)?;
 
             uniform.provide_handle(ShaderUniformHandler{
                 program: self.program.clone(),
-                uniform: u.unwrap(),
+                uniform : uniform_location,
                 render_context: Rc::clone(&self.render_context)
             })
         }
@@ -519,9 +517,30 @@ impl Shader {
         Ok(())
     }
 
+    pub fn send_uniform(&mut self, uniform_name : &str, value : impl Into<UniformValue>) -> ShaderResult<()>{
+        let uniform_location = self.get_uniform_location(uniform_name)?;
+        send_uniforms(&self.render_context.gl, value, self.program, uniform_location);
+        Ok(())
+    }
+
     pub fn bind(&self) {
         unsafe {
             self.render_context.gl.use_program(Some(self.program))
+        }
+    }
+
+    fn get_uniform_location(&mut self, uniform_name : &str) -> ShaderResult<NativeUniformLocation>{
+        unsafe {
+            let uniform_location = if self.uniform_map.contains_key(uniform_name) {
+                self.uniform_map.get(uniform_name).unwrap().clone()
+            } else {
+                let u = self.render_context.gl.get_uniform_location(self.program, uniform_name);
+                if u.is_none() { return Err(UNIFORM_LOCATION_NOT_FOUND)}
+                self.uniform_map.insert(String::from(uniform_name), u.unwrap());
+                *self.uniform_map.get(uniform_name).unwrap()
+            };
+
+            Ok(uniform_location)
         }
     }
 }
@@ -535,27 +554,32 @@ pub struct ShaderUniformHandler {
 
 impl ShaderUniformHandler {
     pub fn update_uniform(&self, value : impl Into<UniformValue>) {
-        let value = value.into();
-        unsafe {
-            match value {
-                FLOAT(value) => {
-                    self.render_context.gl.uniform_1_f32(Some(&self.uniform), value);
-                }
-                INT(_) => {}
-                U_INT(_) => {}
-                VEC4(_) => {}
-                VEC3(_) => {}
-                VEC2(_) => {}
-                MAT4(value) => {
-                    let slice : [[f32; 4]; 4] = value.into();
-                    let result = &slice.concat();
-                    self.render_context.gl.uniform_matrix_4_f32_slice(Some(&self.uniform), false, result)
-                }
-            }
-        }
+        send_uniforms(&self.render_context.gl, value, self.program, self.uniform)
     }
 }
 
 pub trait Uniform {
     fn provide_handle(&mut self, handle : ShaderUniformHandler);
+}
+
+fn send_uniforms(gl : &Context, uniform_value : impl Into<UniformValue>, program : NativeProgram, location : UniformLocation) {
+    let uniform_value = uniform_value.into();
+    unsafe {
+        gl.use_program(Some(program));
+        match uniform_value {
+            FLOAT(value) => {
+                gl.uniform_1_f32(Some(&location), value);
+            }
+            INT(_) => {}
+            U_INT(_) => {}
+            VEC4(_) => {}
+            VEC3(_) => {}
+            VEC2(_) => {}
+            MAT4(value) => {
+                let slice : [[f32; 4]; 4] = value.into();
+                let result = &slice.concat();
+                gl.uniform_matrix_4_f32_slice(Some(&location), false, result)
+            }
+        }
+    }
 }

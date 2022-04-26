@@ -72,18 +72,20 @@ fn main() -> Result<(), String> {
         let mut camera_transform = Transform::new();
         camera_transform.set_pos((0.0, 0.0, -1.0));
 
-        program.uniform("perspective", perspective_matrix);
-        program.uniform("transform", transform);
-        program.uniform_debug_type("transform", MUTABLE);
-        program.uniform("camera", camera_transform);
-        program.uniform_debug_type("camera", MUTABLE);
+        // program.uniform("perspective", perspective_matrix);
+        // program.uniform("transform", transform);
+        // program.uniform_debug_type("transform", MUTABLE);
+        // program.uniform("camera", camera_transform);
+        // program.uniform_debug_type("camera", MUTABLE);
 
         ///Testing new Shader Code
-        let shdr = ShaderBuilder::new()
+        let mut shdr = ShaderBuilder::new()
             .with_vert_shader("static_vert.glsl")
             .with_frag_shader("static_frag.glsl")
             .build(&render_context).expect("Unable to create shader.");
 
+        shdr.add_uniform("camera", &mut camera_transform);
+        shdr.add_uniform("transform", &mut transform);
 
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
@@ -110,7 +112,8 @@ fn main() -> Result<(), String> {
                         ui.label("Pixel Density:");
                         downsize.debug(ui, &UIRenderType::MUTABLE);
                     });
-                    program.debug(ui, &UIRenderType::MUTABLE);
+                    camera_transform.debug(ui, &UIRenderType::MUTABLE);
+                    camera_transform.get_mat();
                     ui.separator();
                     ui.checkbox(&mut should_animate, "Should Animate")
                 });
@@ -158,11 +161,10 @@ fn main() -> Result<(), String> {
 
                         downsize.render(&render_context.gl, render_context.window.window().inner_size(), |gl, aspect_ratio| {
                             let pers = perspective(Deg(80.0), aspect_ratio, 0.00001, 200.0);
-                            program.uniform("perspective", pers);
+                            shdr.send_uniform("perspective", pers);
 
                             texture.bind(&render_context.gl);
-                            program.bind(&render_context.gl);
-                            program.update_uniforms(&render_context.gl);
+                            shdr.bind();
                             unsafe { vao.render(&render_context.gl); }
                         });
 

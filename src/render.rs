@@ -1,3 +1,4 @@
+use std::rc::Rc;
 use glow::*;
 use glutin::window::Window;
 use glutin::event_loop::EventLoop;
@@ -25,70 +26,70 @@ pub trait Deletable {
 }
 
 pub struct RenderContext {
-    gl : Context,
-    window : ContextWrapper<PossiblyCurrent, Window>,
+    pub gl : Context,
+    pub window : ContextWrapper<PossiblyCurrent, Window>,
 }
+//
+// impl RenderContext {
+//
+//     pub fn gl(&self, gl_callback : impl FnOnce(&Context)) -> Result<(), RenderError> {
+//         gl_callback(&self.gl);
+//         self.has_gl_error()
+//     }
+//
+//     pub fn render(&self, renderPacket : impl Renderable) -> Result<(), RenderError> {
+//         unsafe { renderPacket.render(&self.gl); }
+//         self.has_gl_error()
+//     }
+//
+//     pub fn get_window_size(&self) -> PhysicalSize<u32> {
+//         self.window.window().inner_size()
+//     }
+//
+//     pub fn has_gl_error(&self) -> Result<(), RenderError> {
+//         unsafe {
+//             let error = RenderError::from_error_code(self.gl.get_error());
+//
+//             match error {
+//                 RenderError::UNKNOWN => {}
+//                 _ => {return Err(error)}
+//             }
+//         }
+//
+//         Ok(())
+//     }
+// }
+//
+//
+// #[derive(Debug)]
+// pub enum RenderError {
+//     INVALID_ENUM,
+//     INVALID_VALUE,
+//     INVALID_OPERATION,
+//     STACK_OVERFLOW,
+//     STACK_UNDERFLOW,
+//     OUT_OF_MEMORY,
+//     INVALID_FRAMEBUFFER_OPERATION,
+//     CONTEXT_LOST,
+//     UNKNOWN
+// }
+//
+// impl RenderError {
+//     pub fn from_error_code(error : u32) -> Self {
+//         if error == INVALID_ENUM {return RenderError::INVALID_ENUM}
+//         else if error == INVALID_VALUE { return RenderError::INVALID_VALUE}
+//         else if error == INVALID_OPERATION { return RenderError::INVALID_OPERATION }
+//         else if error == STACK_OVERFLOW { return RenderError::STACK_OVERFLOW }
+//         else if error == STACK_UNDERFLOW { return RenderError::STACK_UNDERFLOW }
+//         else if error == OUT_OF_MEMORY { return RenderError::OUT_OF_MEMORY }
+//         else if error == INVALID_FRAMEBUFFER_OPERATION { return RenderError::INVALID_FRAMEBUFFER_OPERATION }
+//         else if error == CONTEXT_LOST { return RenderError::CONTEXT_LOST }
+//
+//         RenderError::UNKNOWN
+//     }
+// }
 
-impl RenderContext {
-
-    pub fn gl(&self, gl_callback : impl FnOnce(&Context)) -> Result<(), RenderError> {
-        gl_callback(&self.gl);
-        self.has_gl_error()
-    }
-
-    pub fn render(&self, renderPacket : impl Renderable) -> Result<(), RenderError> {
-        unsafe { renderPacket.render(&self.gl); }
-        self.has_gl_error()
-    }
-
-    pub fn get_window_size(&self) -> PhysicalSize<u32> {
-        self.window.window().inner_size()
-    }
-
-    pub fn has_gl_error(&self) -> Result<(), RenderError> {
-        unsafe {
-            let error = RenderError::from_error_code(self.gl.get_error());
-
-            match error {
-                RenderError::UNKNOWN => {}
-                _ => {return Err(error)}
-            }
-        }
-
-        Ok(())
-    }
-}
-
-
-#[derive(Debug)]
-pub enum RenderError {
-    INVALID_ENUM,
-    INVALID_VALUE,
-    INVALID_OPERATION,
-    STACK_OVERFLOW,
-    STACK_UNDERFLOW,
-    OUT_OF_MEMORY,
-    INVALID_FRAMEBUFFER_OPERATION,
-    CONTEXT_LOST,
-    UNKNOWN
-}
-
-impl RenderError {
-    pub fn from_error_code(error : u32) -> Self {
-        if error == INVALID_ENUM {return RenderError::INVALID_ENUM}
-        else if error == INVALID_VALUE { return RenderError::INVALID_VALUE}
-        else if error == INVALID_OPERATION { return RenderError::INVALID_OPERATION }
-        else if error == STACK_OVERFLOW { return RenderError::STACK_OVERFLOW }
-        else if error == STACK_UNDERFLOW { return RenderError::STACK_UNDERFLOW }
-        else if error == OUT_OF_MEMORY { return RenderError::OUT_OF_MEMORY }
-        else if error == INVALID_FRAMEBUFFER_OPERATION { return RenderError::INVALID_FRAMEBUFFER_OPERATION }
-        else if error == CONTEXT_LOST { return RenderError::CONTEXT_LOST }
-
-        RenderError::UNKNOWN
-    }
-}
-
-pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrapper<PossiblyCurrent, Window>, EventLoop<()>, EguiGlow) {
+pub fn createGlutinContext<'a>(title : &str) -> (Rc<RenderContext>, &'a str, EventLoop<()>, EguiGlow) {
     unsafe {
         let event_loop = glutin::event_loop::EventLoop::with_user_event();
         let window_builder = glutin::window::WindowBuilder::new()
@@ -122,18 +123,6 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
             println!("[GL ERROR][{}]:{}", severity_text, message)
         });
 
-        (gl, "#version 410", window, event_loop, egui_glow)
-    }
-}
-
-pub fn createSurfacelessContext() {
-    unsafe {
-       //todo create a surfaceless context
-    }
-}
-
-pub fn disable_shader_program(gl : &Context) {
-    unsafe {
-        gl.use_program(None)
+        (Rc::new(RenderContext{gl, window }), "#version 410", event_loop, egui_glow)
     }
 }

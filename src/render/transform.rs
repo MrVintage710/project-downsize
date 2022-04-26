@@ -4,17 +4,19 @@ use egui::emath::Numeric;
 use crate::render::debug::{Debugable, UIRenderType};
 use egui::Ui;
 use cgmath::Rotation3;
+use crate::render::shader::{ShaderUniformHandler, Uniform};
 use crate::util::math::wrap_vec3;
 use crate::util::variable::UpdateVariable;
 
-#[derive(Clone, Copy, Debug, PartialEq)]
-pub struct Transform  {
+#[derive(Clone)]
+pub struct Transform {
     pos : Vector3<f32>,
     scale: Vector3<f32>,
     rotation : Vector3<f32>,
     origin : Vector3<f32>,
     mat : Matrix4<f32>,
     mat_has_changed: bool,
+    uniform_handler: Option<ShaderUniformHandler>
 }
 
 impl Transform {
@@ -26,13 +28,17 @@ impl Transform {
             origin: Vector3::new(0.0, 0.0, 0.0),
             mat : Matrix4::identity(),
             mat_has_changed: true,
+            uniform_handler: None
         }
     }
 
     pub fn get_mat(&mut self) -> Matrix4<f32> {
         if self.mat_has_changed {
             self.mat = self.calc_mat();
-            self.mat_has_changed = false
+            self.mat_has_changed = false;
+            if self.uniform_handler.is_some() {
+                self.uniform_handler.unwrap().update_uniform(Matrix4(self.mat))
+            }
         }
 
         self.mat
@@ -96,6 +102,16 @@ impl Transform {
 impl Into<Matrix4<f32>> for Transform {
     fn into(mut self) -> Matrix4<f32> {
         self.get_mat()
+    }
+}
+
+impl Uniform for Transform {
+    fn provide_handle(&mut self, handle: ShaderUniformHandler) {
+        unsafe { self.uniform_handler = Some(handle) }
+    }
+
+    fn get_id(&self) -> String {
+        "transform".to_owned()
     }
 }
 

@@ -81,6 +81,12 @@ impl Into<UniformValue> for Transform {
     }
 }
 
+impl From<(f32, f32, f32)> for UniformValue {
+    fn from(value : (f32, f32, f32)) -> Self {
+        VEC3(Vector3::new(value.0, value.1, value.2))
+    }
+}
+
 ///Rewrite of the shader
 pub struct ShaderBuilder {
     shaders : [Option<String>; 4]
@@ -175,26 +181,6 @@ impl ShaderBuilder {
             let filepath = String::from("assets/shaders/").add(file_name);
             let data = fs::read_to_string(filepath.as_str()).expect("Could not find file.");
 
-            //Test parsing stuff
-
-            // let apt = ShaderStage::parse(data.clone());
-            // if let Err(parse_error) = apt {return Err(GLSL_PARSE_ERROR(parse_error))}
-            // let mut apt = apt.unwrap();
-            // for i in apt.0 {
-            //     if let ExternalDeclaration::Declaration(mut dec) = i {
-            //         if let Declaration::InitDeclaratorList(mut list) = dec {
-            //             let type_qualifier = list.head.ty.qualifier.expect("No qualifiers").qualifiers.0;
-            //             let type_qualifier_spec = type_qualifier.get(0).unwrap();
-            //
-            //             if let TypeQualifierSpec::Storage(qualifer) = type_qualifier_spec {
-            //                 if let StorageQualifier::Uniform = qualifer {
-            //                     println!("{:?} {:?} {:?}", qualifer, list.head.ty.ty.ty, list.head.name.expect("No name").0);
-            //                 }
-            //             }
-            //         }
-            //     }
-            // }
-
             gl.shader_source(shader, data.as_str());
             gl.compile_shader(shader);
 
@@ -204,18 +190,6 @@ impl ShaderBuilder {
             Ok(shader)
         }
     }
-}
-
-type ShaderResult<T> = Result<T, ShaderError>;
-
-#[derive(Debug)]
-pub enum ShaderError {
-    MISSING_SHADER,
-    GLSL_LINK_ERROR,
-    GLSL_PARSE_ERROR(ParseError),
-    GLSL_COMPILE_ERROR(String),
-    UNIFORM_ALREADY_EXISTS,
-    UNIFORM_LOCATION_NOT_FOUND
 }
 
 pub struct Shader{
@@ -243,10 +217,27 @@ impl Shader {
         Ok(())
     }
 
+    pub fn add_multi_uniform<T>(&self, uniform : &mut T) where T : MultiUniform {
+        uniform.provide_handle_provider(|name| {
+            let uniform_location = self.get_uniform_location(name)
+                .expect(format!("Need to have uniform with the name '{}'.", name).as_ref());
+            let shader_handle = ShaderUniformHandler{
+                program: self.program,
+                uniform: uniform_location,
+                render_context: Rc::clone(&self.render_context)
+            };
+            Some(shader_handle)
+        });
+    }
+
     pub fn send_uniform(&mut self, uniform_name : &str, value : impl Into<UniformValue>) -> ShaderResult<()>{
         let uniform_location = self.get_uniform_location(uniform_name)?;
         send_uniforms(&self.render_context.gl, value, self.program, uniform_location);
         Ok(())
+    }
+
+    pub fn has_uniform(&self, uniform_name : &str) -> bool {
+        self.uniform_map.contains_key(uniform_name)
     }
 
     pub fn bind(&self) {
@@ -266,7 +257,7 @@ impl Shader {
         }
     }
 
-    fn get_uniform_location(&mut self, uniform_name : &str) -> ShaderResult<NativeUniformLocation>{
+    fn get_uniform_location(&self, uniform_name : &str) -> ShaderResult<NativeUniformLocation>{
         unsafe {
             if !self.uniform_map.contains_key(uniform_name) {
                 return Err(UNIFORM_LOCATION_NOT_FOUND)
@@ -277,6 +268,18 @@ impl Shader {
             Ok(*uniform_location)
         }
     }
+}
+
+pub type ShaderResult<T> = Result<T, ShaderError>;
+
+#[derive(Debug)]
+pub enum ShaderError {
+    MISSING_SHADER,
+    GLSL_LINK_ERROR,
+    GLSL_PARSE_ERROR(ParseError),
+    GLSL_COMPILE_ERROR(String),
+    UNIFORM_ALREADY_EXISTS,
+    UNIFORM_LOCATION_NOT_FOUND
 }
 
 #[derive(Clone)]
@@ -296,6 +299,10 @@ pub trait Uniform {
     fn provide_handle(&mut self, handle : ShaderUniformHandler);
 }
 
+pub trait MultiUniform {
+    fn provide_handle_provider(&mut self, provider : impl Fn(&str) -> Option<ShaderUniformHandler>);
+}
+
 fn send_uniforms(gl : &Context, uniform_value : impl Into<UniformValue>, program : NativeProgram, location : UniformLocation) {
     let uniform_value = uniform_value.into();
     unsafe {
@@ -304,15 +311,21 @@ fn send_uniforms(gl : &Context, uniform_value : impl Into<UniformValue>, program
             FLOAT(value) => {
                 gl.uniform_1_f32(Some(&location), value);
             }
-            INT(_) => {}
+            INT(value) => {
+                gl.uniform_1_i32(Some(location.borrow()), value);
+            }
             U_INT(_) => {}
-            VEC4(_) => {}
-            VEC3(_) => {}
+            VEC4(value) => {
+                gl.uniform_4_f32(Some(location.borrow()), value.x, value.y, value.z, value.w);
+            }
+            VEC3(value) => {
+                gl.uniform_3_f32(Some(location.borrow()), value.x, value.y, value.z);
+            }
             VEC2(_) => {}
             MAT4(value) => {
                 let slice : [[f32; 4]; 4] = value.into();
                 let result = &slice.concat();
-                gl.uniform_matrix_4_f32_slice(Some(&location), false, result)
+                gl.uniform_matrix_4_f32_slice(Some(&location), false, result);
             }
         }
     }

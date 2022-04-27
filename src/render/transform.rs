@@ -2,7 +2,7 @@ use std::borrow::BorrowMut;
 use cgmath::{Matrix4, Quaternion, Vector3, SquareMatrix, Zero, Deg, Angle, Rad, BaseFloat, Transform as TransformMatrix};
 use egui::emath::Numeric;
 use crate::render::debug::{Debugable, UIRenderType};
-use egui::Ui;
+use egui::{Grid, Ui};
 use cgmath::Rotation3;
 use crate::render::shader::{ShaderUniformHandler, Uniform, UniformValue};
 use crate::util::math::wrap_vec3;
@@ -98,18 +98,32 @@ impl Uniform for Transform {
 
 impl Debugable for Transform {
     fn debug(&mut self, ui: &mut Ui, enabled: bool) -> bool {
-        let changed = ui.horizontal(|ui| {
-            ui.label("Position:");
-            self.pos.debug(ui, true)
-        }).inner || ui.horizontal(|ui| {
-            ui.label("Scale:");
-            self.scale.debug(ui, true)
-        }).inner || ui.horizontal(|ui| {
-            ui.label("Rotation:");
-            self.rotation.debug(ui, true)
-        }).inner || ui.horizontal(|ui| {
-            ui.label("Origin:");
-            self.origin.debug(ui, true)
+        let changed = ui.add_enabled_ui(enabled, |ui|{
+            let mut grid = Grid::new("main_grid")
+                .num_columns(2)
+                .spacing([20.0, 4.0])
+                .striped(true);
+
+            grid.show(ui, |ui| {
+                    ui.label("Position:");
+                    let b1 = self.pos.debug(ui, true);
+                    ui.end_row();
+
+                    ui.label("Scale:");
+                    let b2 = self.scale.debug(ui, true);
+                    ui.end_row();
+
+                    ui.label("Rotation:");
+                    let b3 = self.rotation.debug(ui, true);
+                    ui.end_row();
+
+                    ui.label("Origin:");
+                    let b4 = self.origin.debug(ui, true);
+                    ui.end_row();
+
+                    b1 || b2 || b3 || b4
+                }
+            ).inner
         }).inner;
 
         if changed {

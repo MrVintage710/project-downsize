@@ -147,6 +147,16 @@ impl ShaderBuilder {
                 return Err(GLSL_LINK_ERROR)
             }
 
+            let mut uniform_map = HashMap::new();
+            for i in 0..gl.get_active_uniforms(program) {
+                let uniform = gl.get_active_uniform(program, i);
+                if uniform.is_some() {
+                    let uniform = uniform.unwrap();
+                    uniform_map.insert(uniform.name.clone(), gl.get_uniform_location(program, uniform.name.as_str()).unwrap());
+                }
+                // println!("Active Shader {}: {:?} {:?}", i, uni.name, uni.utype)
+            }
+
             Ok(Shader {
                 program,
                 vert_shader,
@@ -154,7 +164,7 @@ impl ShaderBuilder {
                 geo_shader,
                 tes_shader,
                 render_context: Rc::clone(render_context),
-                uniform_map: HashMap::new()
+                uniform_map
             })
         }
     }
@@ -167,23 +177,23 @@ impl ShaderBuilder {
 
             //Test parsing stuff
 
-            let apt = ShaderStage::parse(data.clone());
-            if let Err(parse_error) = apt {return Err(GLSL_PARSE_ERROR(parse_error))}
-            let mut apt = apt.unwrap();
-            for i in apt.0 {
-                if let ExternalDeclaration::Declaration(mut dec) = i {
-                    if let Declaration::InitDeclaratorList(mut list) = dec {
-                        let type_qualifier = list.head.ty.qualifier.expect("No qualifiers").qualifiers.0;
-                        let type_qualifier_spec = type_qualifier.get(0).unwrap();
-
-                        if let TypeQualifierSpec::Storage(qualifer) = type_qualifier_spec {
-                            if let StorageQualifier::Uniform = qualifer {
-                                println!("{:?} {:?} {:?}", qualifer, list.head.ty.ty.ty, list.head.name.expect("No name").0);
-                            }
-                        }
-                    }
-                }
-            }
+            // let apt = ShaderStage::parse(data.clone());
+            // if let Err(parse_error) = apt {return Err(GLSL_PARSE_ERROR(parse_error))}
+            // let mut apt = apt.unwrap();
+            // for i in apt.0 {
+            //     if let ExternalDeclaration::Declaration(mut dec) = i {
+            //         if let Declaration::InitDeclaratorList(mut list) = dec {
+            //             let type_qualifier = list.head.ty.qualifier.expect("No qualifiers").qualifiers.0;
+            //             let type_qualifier_spec = type_qualifier.get(0).unwrap();
+            //
+            //             if let TypeQualifierSpec::Storage(qualifer) = type_qualifier_spec {
+            //                 if let StorageQualifier::Uniform = qualifer {
+            //                     println!("{:?} {:?} {:?}", qualifer, list.head.ty.ty.ty, list.head.name.expect("No name").0);
+            //                 }
+            //             }
+            //         }
+            //     }
+            // }
 
             gl.shader_source(shader, data.as_str());
             gl.compile_shader(shader);
@@ -258,16 +268,13 @@ impl Shader {
 
     fn get_uniform_location(&mut self, uniform_name : &str) -> ShaderResult<NativeUniformLocation>{
         unsafe {
-            let uniform_location = if self.uniform_map.contains_key(uniform_name) {
-                self.uniform_map.get(uniform_name).unwrap().clone()
-            } else {
-                let u = self.render_context.gl.get_uniform_location(self.program, uniform_name);
-                if u.is_none() { return Err(UNIFORM_LOCATION_NOT_FOUND)}
-                self.uniform_map.insert(String::from(uniform_name), u.unwrap());
-                *self.uniform_map.get(uniform_name).unwrap()
-            };
+            if !self.uniform_map.contains_key(uniform_name) {
+                return Err(UNIFORM_LOCATION_NOT_FOUND)
+            }
 
-            Ok(uniform_location)
+            let uniform_location = self.uniform_map.get(uniform_name).unwrap();
+
+            Ok(*uniform_location)
         }
     }
 }

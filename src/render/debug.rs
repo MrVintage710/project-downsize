@@ -10,136 +10,151 @@ pub enum UIRenderType {
 }
 
 pub trait Debugable {
-    fn debug(&mut self, ui : &mut Ui, render_type : &UIRenderType);
-}
-
-impl <T> Debugable for Vector4<T> where T : Numeric {
-    fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
-        let enabled = if let UIRenderType::MUTABLE = render_type {
-            true
-        } else {
-            false
-        };
-
-        if let UIRenderType::HIDDEN = render_type {return;}
-
-        ui.add_enabled_ui(enabled, |ui| {
-            ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut self.x));
-                ui.add(DragValue::new(&mut self.y));
-                ui.add(DragValue::new(&mut self.z));
-                ui.add(DragValue::new(&mut self.w));
-            });
-        });
-    }
+    fn debug(&mut self, ui : &mut Ui, enabled : bool) -> bool;
 }
 
 impl <T> Debugable for Vector3<T> where T : Numeric {
-    fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
-        let enabled = if let UIRenderType::MUTABLE = render_type {
-            true
-        } else {
-            false
-        };
+    fn debug(&mut self, ui: &mut Ui, enabled : bool) -> bool {
 
-        if let UIRenderType::HIDDEN = render_type {return;}
-
-        ui.add_enabled_ui(enabled, |ui| {
+        let res = ui.add_enabled_ui(enabled, |ui| {
             ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut self.x).speed(0.1));
-                ui.add(DragValue::new(&mut self.y).speed(0.1));
-                ui.add(DragValue::new(&mut self.z).speed(0.1));
-            });
-        });
-    }
-}
-
-impl <T> Debugable for Vector2<T> where T : Numeric {
-    fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
-        let enabled = if let UIRenderType::MUTABLE = render_type {
-            true
-        } else {
-            false
-        };
-
-        if let UIRenderType::HIDDEN = render_type {return;}
-
-        ui.add_enabled_ui(enabled, |ui| {
-            ui.horizontal(|ui| {
-                ui.add(DragValue::new(&mut self.x));
-                ui.add(DragValue::new(&mut self.y));
-            });
-        });
-    }
-}
-
-impl <T> Debugable for Matrix4<T> where T : Numeric {
-    fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
-        let enabled = if let UIRenderType::MUTABLE = render_type {
-            true
-        } else {
-            false
-        };
-
-        if let UIRenderType::HIDDEN = render_type {return;}
-
-        ui.add_enabled_ui(enabled, |ui|{
-            ui.horizontal(|ui|{
-                ui.add(DragValue::new(&mut self.x.x));
-                ui.add(DragValue::new(&mut self.y.x));
-                ui.add(DragValue::new(&mut self.z.x));
-                ui.add(DragValue::new(&mut self.w.x));
-            });
-            ui.horizontal(|ui|{
-                ui.add(DragValue::new(&mut self.x.y));
-                ui.add(DragValue::new(&mut self.y.y));
-                ui.add(DragValue::new(&mut self.z.y));
-                ui.add(DragValue::new(&mut self.w.y));
-            });
-            ui.horizontal(|ui|{
-                ui.add(DragValue::new(&mut self.x.z));
-                ui.add(DragValue::new(&mut self.y.z));
-                ui.add(DragValue::new(&mut self.z.z));
-                ui.add(DragValue::new(&mut self.w.z));
-            });
-            ui.horizontal(|ui|{
-                ui.add(DragValue::new(&mut self.x.w));
-                ui.add(DragValue::new(&mut self.y.w));
-                ui.add(DragValue::new(&mut self.z.w));
-                ui.add(DragValue::new(&mut self.w.w));
+                ui.add(DragValue::new(&mut self.x).speed(0.1)).changed() ||
+                    ui.add(DragValue::new(&mut self.y).speed(0.1)).changed() ||
+                    ui.add(DragValue::new(&mut self.z).speed(0.1)).changed()
             })
         });
+
+        res.inner.inner
     }
 }
 
-impl Debugable for i32 {
-    fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
-        let enabled = if let UIRenderType::MUTABLE = render_type {
-            true
-        } else {
-            false
-        };
-
-        if let UIRenderType::HIDDEN = render_type {return;}
-
-        ui.add_enabled_ui(enabled, |ui| {
-            ui.add(DragValue::new(self))
-        });
-    }
-}
-
-impl Debugable for f32 {
-    fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
-        let enabled = if let UIRenderType::MUTABLE = render_type {
-            true
-        } else {
-            false
-        };
-
-        if let UIRenderType::HIDDEN = render_type {return;}
-
-        ui.add_enabled_ui(enabled, |ui| {
-            ui.add(DragValue::new(self))
-        });
-    }
-}
+// impl <T> Debugable for Vector4<T> where T : Numeric {
+//     fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
+//         let enabled = if let UIRenderType::MUTABLE = render_type {
+//             true
+//         } else {
+//             false
+//         };
+//
+//         if let UIRenderType::HIDDEN = render_type {return;}
+//
+//         ui.add_enabled_ui(enabled, |ui| {
+//             ui.horizontal(|ui| {
+//                 ui.add(DragValue::new(&mut self.x));
+//                 ui.add(DragValue::new(&mut self.y));
+//                 ui.add(DragValue::new(&mut self.z));
+//                 ui.add(DragValue::new(&mut self.w));
+//             });
+//         });
+//     }
+// }
+//
+// impl <T> Debugable for Vector3<T> where T : Numeric {
+//     fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
+//         let enabled = if let UIRenderType::MUTABLE = render_type {
+//             true
+//         } else {
+//             false
+//         };
+//
+//         if let UIRenderType::HIDDEN = render_type {return;}
+//
+//         ui.add_enabled_ui(enabled, |ui| {
+//             ui.horizontal(|ui| {
+//                 ui.add(DragValue::new(&mut self.x).speed(0.1));
+//                 ui.add(DragValue::new(&mut self.y).speed(0.1));
+//                 ui.add(DragValue::new(&mut self.z).speed(0.1));
+//             });
+//         });
+//     }
+// }
+//
+// impl <T> Debugable for Vector2<T> where T : Numeric {
+//     fn debug(&mut self, ui: &mut Ui, render_type : &UIRenderType) {
+//         let enabled = if let UIRenderType::MUTABLE = render_type {
+//             true
+//         } else {
+//             false
+//         };
+//
+//         if let UIRenderType::HIDDEN = render_type {return;}
+//
+//         ui.add_enabled_ui(enabled, |ui| {
+//             ui.horizontal(|ui| {
+//                 ui.add(DragValue::new(&mut self.x));
+//                 ui.add(DragValue::new(&mut self.y));
+//             });
+//         });
+//     }
+// }
+//
+// impl <T> Debugable for Matrix4<T> where T : Numeric {
+//     fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
+//         let enabled = if let UIRenderType::MUTABLE = render_type {
+//             true
+//         } else {
+//             false
+//         };
+//
+//         if let UIRenderType::HIDDEN = render_type {return;}
+//
+//         ui.add_enabled_ui(enabled, |ui|{
+//             ui.horizontal(|ui|{
+//                 ui.add(DragValue::new(&mut self.x.x));
+//                 ui.add(DragValue::new(&mut self.y.x));
+//                 ui.add(DragValue::new(&mut self.z.x));
+//                 ui.add(DragValue::new(&mut self.w.x));
+//             });
+//             ui.horizontal(|ui|{
+//                 ui.add(DragValue::new(&mut self.x.y));
+//                 ui.add(DragValue::new(&mut self.y.y));
+//                 ui.add(DragValue::new(&mut self.z.y));
+//                 ui.add(DragValue::new(&mut self.w.y));
+//             });
+//             ui.horizontal(|ui|{
+//                 ui.add(DragValue::new(&mut self.x.z));
+//                 ui.add(DragValue::new(&mut self.y.z));
+//                 ui.add(DragValue::new(&mut self.z.z));
+//                 ui.add(DragValue::new(&mut self.w.z));
+//             });
+//             ui.horizontal(|ui|{
+//                 ui.add(DragValue::new(&mut self.x.w));
+//                 ui.add(DragValue::new(&mut self.y.w));
+//                 ui.add(DragValue::new(&mut self.z.w));
+//                 ui.add(DragValue::new(&mut self.w.w));
+//             })
+//         });
+//     }
+// }
+//
+// impl Debugable for i32 {
+//     fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
+//         let enabled = if let UIRenderType::MUTABLE = render_type {
+//             true
+//         } else {
+//             false
+//         };
+//
+//         if let UIRenderType::HIDDEN = render_type {return;}
+//
+//         ui.add_enabled_ui(enabled, |ui| {
+//             ui.add(DragValue::new(self))
+//         });
+//     }
+// }
+//
+// impl Debugable for f32 {
+//     fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
+//         let enabled = if let UIRenderType::MUTABLE = render_type {
+//             true
+//         } else {
+//             false
+//         };
+//
+//         if let UIRenderType::HIDDEN = render_type {return;}
+//
+//         ui.add_enabled_ui(enabled, |ui| {
+//             ui.add(DragValue::new(self))
+//         });
+//     }
+// }

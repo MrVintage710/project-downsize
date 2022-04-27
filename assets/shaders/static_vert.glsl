@@ -11,6 +11,6 @@ uniform mat4 perspective;
 uniform mat4 camera;
 
 void main() {
-    gl_Position = perspective * transform * vec4(pos, 1.0);
+    gl_Position = perspective * camera * transform * vec4(pos, 1.0);
     uv_pos = uv;
 }

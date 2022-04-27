@@ -1,7 +1,7 @@
 
 pub struct UpdateVariable<T> {
     has_changed : bool,
-    value : Box<T>
+    value : T
 }
 
 impl <T> UpdateVariable<T> {
@@ -9,7 +9,7 @@ impl <T> UpdateVariable<T> {
     pub fn from(value : T) -> Self {
         UpdateVariable {
             has_changed: true,
-            value: Box::new(value)
+            value
         }
     }
 
@@ -23,7 +23,7 @@ impl <T> UpdateVariable<T> {
     }
 
     pub fn set_value(&mut self, value : T) {
-        self.value = Box::new(value);
+        self.value = value;
         self.has_changed;
     }
 

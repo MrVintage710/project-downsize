@@ -12,8 +12,10 @@ use std::time::{Instant, SystemTime};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
-use egui::Align2;
+use egui::{Align2, Color32};
 use crate::render::downsize::Downsize;
+use crate::render::lighting::GlobalLighting;
+use crate::render::shader::UniformValue::VEC3F;
 
 fn main() -> Result<(), String> {
     let (render_context, shader_version, event_loop, mut egui_glow) = createGlutinContext("Downsize");
@@ -62,6 +64,8 @@ fn main() -> Result<(), String> {
         let mut camera_transform = Transform::new();
         camera_transform.set_pos((0.0, 0.0, -1.0));
 
+        let mut global_lighting = GlobalLighting::default();
+
         ///Testing new Shader Code
         let mut shdr = ShaderBuilder::new()
             .with_vert_shader("static_vert.glsl")
@@ -70,6 +74,7 @@ fn main() -> Result<(), String> {
 
         shdr.add_uniform("camera", &mut camera_transform);
         shdr.add_uniform("transform", &mut transform);
+        shdr.add_multi_uniform(&mut global_lighting);
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
         let mut should_animate = true;
@@ -95,7 +100,14 @@ fn main() -> Result<(), String> {
                         ui.label("Pixel Density:");
                         downsize.debug(ui, true);
                     });
-                    camera_transform.debug(ui, false);
+                    ui.collapsing("Camera Transform", |ui| {
+                        camera_transform.debug(ui, true);
+                    });
+                    ui.collapsing("Plane Transform", |ui| {
+                        transform.debug(ui, true);
+                    });
+                    global_lighting.debug(ui, true);
+
                     ui.separator();
                     ui.checkbox(&mut should_animate, "Should Animate")
                 });

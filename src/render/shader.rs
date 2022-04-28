@@ -6,8 +6,8 @@ use cgmath::{Vector3, Vector2, Vector4, Matrix4};
 use std::collections::HashMap;
 use std::rc::Rc;
 use std::sync::mpsc;
-use crate::render::shader::UniformValue::{VEC4, VEC3, VEC2, INT, FLOAT, MAT4, U_INT};
-use egui::{Ui, DragValue};
+use crate::render::shader::UniformValue::{VEC4F, VEC3F, VEC2F, INT, FLOAT, MAT4F, U_INT, VEC4U};
+use egui::{Ui, DragValue, Color32, Rgba};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::shader::ShaderError::{GLSL_COMPILE_ERROR, GLSL_LINK_ERROR, GLSL_PARSE_ERROR, MISSING_SHADER, UNIFORM_ALREADY_EXISTS, UNIFORM_LOCATION_NOT_FOUND};
@@ -29,17 +29,19 @@ pub enum UniformValue {
     FLOAT(f32),
     INT(i32),
     U_INT(u32),
-    VEC4(Vector4<f32>),
-    VEC3(Vector3<f32>),
-    VEC2(Vector2<f32>),
-    MAT4(Matrix4<f32>),
+    VEC3U(Vector3<u32>),
+    VEC4U(Vector4<u32>),
+    VEC4F(Vector4<f32>),
+    VEC3F(Vector3<f32>),
+    VEC2F(Vector2<f32>),
+    MAT4F(Matrix4<f32>),
 }
 
 /// `Into<UniformValue>` implementation for `Vector4<f32>`. This is so that the type can be used in the
 /// `create_uniform()` and `set_uniform()` methods.
 impl Into<UniformValue> for Vector4<f32> {
     fn into(self) -> UniformValue {
-        VEC4(self)
+        VEC4F(self)
     }
 }
 
@@ -47,13 +49,13 @@ impl Into<UniformValue> for Vector4<f32> {
 /// `create_uniform()` and `set_uniform()` methods.
 impl Into<UniformValue> for Vector3<f32> {
     fn into(self) -> UniformValue {
-        VEC3(self)
+        VEC3F(self)
     }
 }
 
 impl Into<UniformValue> for Vector2<f32> {
     fn into(self) -> UniformValue {
-        VEC2(self)
+        VEC2F(self)
     }
 }
 
@@ -71,19 +73,31 @@ impl Into<UniformValue> for f32 {
 
 impl Into<UniformValue> for Matrix4<f32> {
     fn into(self) -> UniformValue {
-        MAT4(self)
+        MAT4F(self)
     }
 }
 
 impl Into<UniformValue> for Transform {
     fn into(self) -> UniformValue {
-        MAT4(self.calc_mat())
+        MAT4F(self.calc_mat())
     }
 }
 
 impl From<(f32, f32, f32)> for UniformValue {
     fn from(value : (f32, f32, f32)) -> Self {
-        VEC3(Vector3::new(value.0, value.1, value.2))
+        VEC3F(Vector3::new(value.0, value.1, value.2))
+    }
+}
+
+impl From<Color32> for UniformValue {
+    fn from(color : Color32) -> Self {
+        VEC4U(Vector4::new(color.r() as u32, color.g() as u32, color.b() as u32, color.a() as u32))
+    }
+}
+
+impl From<Rgba> for UniformValue {
+    fn from(color: Rgba) -> Self {
+        VEC4F(Vector4::new(color.r(), color.g(), color.b(), color.a()))
     }
 }
 
@@ -315,17 +329,23 @@ fn send_uniforms(gl : &Context, uniform_value : impl Into<UniformValue>, program
                 gl.uniform_1_i32(Some(location.borrow()), value);
             }
             U_INT(_) => {}
-            VEC4(value) => {
+            VEC4F(value) => {
                 gl.uniform_4_f32(Some(location.borrow()), value.x, value.y, value.z, value.w);
             }
-            VEC3(value) => {
+            VEC3F(value) => {
                 gl.uniform_3_f32(Some(location.borrow()), value.x, value.y, value.z);
             }
-            VEC2(_) => {}
-            MAT4(value) => {
+            VEC2F(_) => {}
+            MAT4F(value) => {
                 let slice : [[f32; 4]; 4] = value.into();
                 let result = &slice.concat();
                 gl.uniform_matrix_4_f32_slice(Some(&location), false, result);
+            }
+            UniformValue::VEC3U(value) => {
+                gl.uniform_3_u32(Some(location.borrow()), value.x, value.y, value.z)
+            }
+            UniformValue::VEC4U(value) => {
+                gl.uniform_4_u32(Some(location.borrow()), value.x, value.y, value.z, value.w)
             }
         }
     }

@@ -62,7 +62,6 @@ impl Downsize {
 
             gl.bind_framebuffer(FRAMEBUFFER, Some(self.fbo));
             gl.viewport(0, 0, width as i32, height as i32);
-            gl.clear_color(0.1, 0.1, 0.1, 1.0);
             gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
             renderCallback(gl, aspect_ratio);
@@ -71,7 +70,6 @@ impl Downsize {
             gl.bind_framebuffer(READ_FRAMEBUFFER, Some(self.fbo));
             gl.bind_framebuffer(DRAW_FRAMEBUFFER, None);
             gl.blit_framebuffer(0, 0, width as i32, height as i32, 0, 0, size.width as i32, size.height as i32, COLOR_BUFFER_BIT, NEAREST);
-            gl.clear_color(0.0, 0.0, 0.0, 1.0);
         }
     }
 

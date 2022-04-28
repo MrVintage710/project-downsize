@@ -14,7 +14,7 @@ pub struct Transform {
     scale: Vector3<f32>,
     rotation : Vector3<f32>,
     origin : Vector3<f32>,
-    uniform_handler: Option<ShaderUniformHandler>
+    uniform_handler: Option<ShaderUniformHandler>,
 }
 
 impl Transform {

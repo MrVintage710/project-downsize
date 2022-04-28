@@ -12,10 +12,10 @@ use std::time::{Instant, SystemTime};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
-use egui::Align2;
+use egui::{Align2, Color32};
 use crate::render::downsize::Downsize;
 use crate::render::lighting::GlobalLighting;
-use crate::render::shader::UniformValue::VEC3;
+use crate::render::shader::UniformValue::VEC3F;
 
 fn main() -> Result<(), String> {
     let (render_context, shader_version, event_loop, mut egui_glow) = createGlutinContext("Downsize");
@@ -75,10 +75,6 @@ fn main() -> Result<(), String> {
         shdr.add_uniform("camera", &mut camera_transform);
         shdr.add_uniform("transform", &mut transform);
         shdr.add_multi_uniform(&mut global_lighting);
-
-        //shdr.send_uniform("global_light_color", (1.0, 1.0, 1.0)).expect("Test");
-
-        global_lighting.set_color((1.0, 1.0, 1.0));
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
         let mut should_animate = true;

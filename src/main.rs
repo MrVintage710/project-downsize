@@ -1,5 +1,6 @@
 mod render;
 mod util;
+mod main_kristoff;
 
 use glow::*;
 use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
@@ -17,7 +18,12 @@ use crate::render::downsize::Downsize;
 use crate::render::shader::UniformValue::TRANSFORM;
 
 fn main() -> Result<(), String> {
+
     let (gl, shader_version, window, event_loop, mut egui_glow) = createGlutinContext("Hello Triangle!");
+
+    main_kristoff::kristoff_main();
+    std::process::exit(314);
+
 
     let verts : Vec<Vector3<f32>> = vec![
         Vector3::new(-0.5, 0.5, 0.0),

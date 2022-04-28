@@ -312,14 +312,14 @@ impl ShaderProgram {
         }
     }
 
-    pub fn load_uniform_immediate<T>(&self, gl : &Context, location : &NativeUniformLocation, value : T) where T : Into<UniformValue> {
-
-    }
+    // pub fn load_uniform_immediate<T>(&self, gl : &Context, location : &NativeUniformLocation, value : T) where T : Into<UniformValue> {
+    //
+    // }
 
     pub fn create_uniform_location(program : NativeProgram, gl : &Context, name : &str) -> NativeUniformLocation {
         unsafe {
             let uniform = gl.get_uniform_location(program, name);
-            if uniform.is_none() { panic!("Unable to create shader location '{}'", name)}
+            if uniform.is_none() { panic!("Unable to create shader location: {} ", name)}
             uniform.unwrap()
         }
     }

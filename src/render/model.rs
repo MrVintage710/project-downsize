@@ -9,14 +9,23 @@ use std::path::{Path, PathBuf};
 use cgmath::{Vector2, Vector3};
 use crate::render::texture::Texture;
 use crate::render::shader::ShaderProgram;
+use crate::Renderable;
 
 pub struct OBJModel {
-    texture : Option<Texture>,
-    program : ShaderProgram,
-    vao : VAO,
-    verts : VBO,
-    uvs: VBO,
+    pub(crate) texture : Option<Texture>,
+    pub(crate) program : ShaderProgram,
+    pub(crate) vao : VAO,
+    pub(crate) verts : VBO,
+    pub(crate) uvs: VBO,
     norms : VBO,
+}
+
+impl Renderable for OBJModel {
+    unsafe fn render(&self, gl: &Context) {
+        self.texture.as_ref().unwrap().bind(&gl);
+        self.program.bind(&gl);
+        self.vao.render(&gl);
+    }
 }
 
 impl OBJModel {
@@ -32,7 +41,13 @@ impl OBJModel {
         let obj_model: OBJModel = vao_load_obj(&gl, &model);
         Ok(obj_model)
     }
+
+    pub fn update_uniforms(&mut self, gl: &Context) {
+        self.program.update_uniforms(&gl);
+    }
 }
+
+
 
 fn vao_load_obj(gl: &Context, model: &Obj<TexturedVertex, u32>) -> OBJModel {
     // loads the Obj textured vertex data in to respective vertices, and returns vao with
@@ -73,7 +88,11 @@ fn vao_load_obj(gl: &Context, model: &Obj<TexturedVertex, u32>) -> OBJModel {
     let mut vao = VAO::new(&gl).unwrap();
 
     // todo!() index buffer
-    vao.addIndexBuffer(&gl, Vec::from::<i32>(model.indices.clone()));
+    let i32_indices: Vec<i32> = model.indices.iter()
+        .map(|number| *number as i32)
+        .collect();
+
+    vao.addIndexBuffer(&gl, i32_indices);
 
     vao.add_vbo(&gl, 0, &vert_vbo);
     vao.add_vbo(&gl, 1, &uv_vbo);

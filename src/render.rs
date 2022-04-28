@@ -111,15 +111,15 @@ pub fn createGlutinContext<'a>(title : &str) -> (Context, &'a str, ContextWrappe
 
         let mut egui_glow = egui_glow::EguiGlow::new(&window, &gl);
 
-        gl.debug_message_callback(|source, t, id, severity, message| {
-            let mut severity_text = "";
-            if severity == DEBUG_SEVERITY_LOW {severity_text = "LOW"}
-            if severity == DEBUG_SEVERITY_MEDIUM {severity_text = "MED"}
-            if severity == DEBUG_SEVERITY_HIGH {severity_text = "HIGH"}
-            if severity == DEBUG_SEVERITY_NOTIFICATION {severity_text = "LOG"; return;}
-
-            println!("[GL ERROR][{}]:{}", severity_text, message)
-        });
+        // gl.debug_message_callback(|source, t, id, severity, message| {
+        //     let mut severity_text = "";
+        //     if severity == DEBUG_SEVERITY_LOW {severity_text = "LOW"}
+        //     if severity == DEBUG_SEVERITY_MEDIUM {severity_text = "MED"}
+        //     if severity == DEBUG_SEVERITY_HIGH {severity_text = "HIGH"}
+        //     if severity == DEBUG_SEVERITY_NOTIFICATION {severity_text = "LOG"; return;}
+        //
+        //     println!("[GL ERROR][{}]:{}", severity_text, message)
+        // });
 
         (gl, "#version 410", window, event_loop, egui_glow)
     }

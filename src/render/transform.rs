@@ -17,13 +17,25 @@ pub struct Transform {
     uniform_handler: Option<ShaderUniformHandler>,
 }
 
-impl Transform {
-    pub fn new() -> Self {
+impl Default for Transform {
+    fn default() -> Self {
         Transform {
             pos: Vector3::new(0.0, 0.0, 0.0),
             scale: Vector3::new(1.0, 1.0, 1.0),
             rotation: Vector3::new(0.0, 0.0, 0.0),
             origin: Vector3::new(0.0, 0.0, 0.0),
+            uniform_handler: None
+        }
+    }
+}
+impl Transform {
+    pub fn new<T>(pos: T, scale: T, rotation: T, origin: T)
+        -> Self where T: Into<Vector3<f32>> {
+        Transform {
+            pos,
+            scale,
+            rotation,
+            origin,
             uniform_handler: None
         }
     }

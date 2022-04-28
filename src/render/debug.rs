@@ -19,8 +19,6 @@ impl <T> Debugable for Vector3<T> where T : Numeric {
 
         let res = ui.add_enabled_ui(enabled, |ui| {
             ui.columns(3, |ui| {
-                match ui { _ => {} }
-
                 ui[0].add(DragValue::new(&mut self.x).speed(0.1)).changed() ||
                     ui[1].add(DragValue::new(&mut self.y).speed(0.1)).changed() ||
                     ui[2].add(DragValue::new(&mut self.z).speed(0.1)).changed()
@@ -38,6 +36,21 @@ pub fn debug_colorRBG(ui : &mut Ui, enabled : bool,  value : &mut Vector3<f32>) 
         if changed {value.x = color[0]; value.y = color[1]; value.z = color[2];}
         changed
     }).inner
+}
+
+///Vector2 impl
+impl <T> Debugable for Vector2<T> where T : Numeric {
+    fn debug(&mut self, ui: &mut Ui, enabled : bool) -> bool {
+
+        let res = ui.add_enabled_ui(enabled, |ui| {
+            ui.columns(2, |ui| {
+                ui[0].add(DragValue::new(&mut self.x).speed(0.1)).changed() ||
+                    ui[1].add(DragValue::new(&mut self.y).speed(0.1)).changed()
+            })
+        });
+
+        res.inner
+    }
 }
 
 // impl <T> Debugable for Vector4<T> where T : Numeric {

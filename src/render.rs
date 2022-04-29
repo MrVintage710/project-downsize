@@ -111,6 +111,10 @@ pub fn createGlutinContext<'a>(title : &str) -> (Rc<RenderContext>, &'a str, Eve
         gl.enable(FRAMEBUFFER_SRGB);
         gl.enable(DEPTH_TEST);
 
+        // gl.enable(CULL_FACE);
+        // gl.cull_face(BACK);
+        // gl.front_face(CCW);
+
         let mut egui_glow = egui_glow::EguiGlow::new(&window, &gl);
 
         gl.debug_message_callback(|source, t, id, severity, message| {

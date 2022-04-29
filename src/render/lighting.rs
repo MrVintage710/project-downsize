@@ -1,5 +1,5 @@
 use std::ops::IndexMut;
-use cgmath::{BaseFloat, Vector3, Vector2, Deg};
+use cgmath::{BaseFloat, Vector3, Vector2, Deg, Rad};
 use egui::{DragValue, Ui};
 use crate::render::debug::{debug_colorRBG, Debugable};
 use crate::render::shader::{MultiUniform, ShaderResult, ShaderUniformHandler};
@@ -48,10 +48,11 @@ impl  GlobalLighting {
 
     fn update_dir_to_shader(&self) {
         if self.direction_uniform.is_some() {
-            let pitch = Deg()
-            let x = self.direction.x.cos() * self.direction.y.cos(); //cos(pitch)*cos(yaw)
-            let y = self.direction.y.sin() * self.direction.x.cos(); //sin(yaw)*cos(pitch)
-            let z = self.direction.x.sin(); //sin(pitch)
+            let pitch = self.direction.x * 0.017453;
+            let yaw = self.direction.y * 0.017453;
+            let x = pitch.cos() * yaw.cos(); //cos(pitch)*cos(yaw)
+            let y = yaw.sin() * pitch.cos(); //sin(yaw)*cos(pitch)
+            let z = pitch.sin(); //sin(pitch)
             self.direction_uniform.as_ref().unwrap().update_uniform((x, y, z))
         }
     }

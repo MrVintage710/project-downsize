@@ -110,6 +110,7 @@ impl VBO {
             gl.buffer_data_u8_slice(glow::ARRAY_BUFFER, data, glow::STATIC_DRAW);
             self.set_type::<T>();
             self.grouping = 2;
+            self.amount = data.len() as u32;
         }
     }
 
@@ -218,6 +219,7 @@ impl VAO {
             vbo.bind(gl);
             gl.vertex_attrib_pointer_f32(index as u32, vbo.grouping() as i32, vbo.data_type(), false, 0, 0)
         }
+        self.render_count = vbo.amount
     }
 
     pub fn addIndexBuffer(&mut self, gl : &Context, indices : Vec<i32>) {
@@ -284,7 +286,6 @@ impl FBO {
                 gl.framebuffer_texture_2d(FRAMEBUFFER, COLOR_ATTACHMENT0 + color_attachment as u32, TEXTURE_2D, Some(texture), 0);
 
                 self.color_attachments[color_attachment as usize] = Some(texture);
-
 
                 FBO::unbind(gl);
                 Ok(self)

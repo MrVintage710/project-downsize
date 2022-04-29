@@ -22,24 +22,135 @@ fn main() -> Result<(), String> {
 
     {
         let verts : Vec<Vector3<f32>> = vec![
-            Vector3::new(-0.5, 0.5, 0.0),
-            Vector3::new(0.5, 0.5,0.0),
-            Vector3::new( -0.5, -0.5, 0.0),
-            Vector3::new(0.5, -0.5, 0.0)
+            Vector3::new(-0.5, -0.5, -0.5),
+            Vector3::new( 0.5, -0.5, -0.5),
+            Vector3::new( 0.5,  0.5, -0.5),
+            Vector3::new( 0.5,  0.5, -0.5),
+            Vector3::new(-0.5,  0.5, -0.5),
+            Vector3::new(-0.5, -0.5, -0.5),
+
+            Vector3::new(-0.5, -0.5,  0.5),
+            Vector3::new( 0.5, -0.5,  0.5),
+            Vector3::new( 0.5,  0.5,  0.5),
+            Vector3::new( 0.5,  0.5,  0.5),
+            Vector3::new(-0.5,  0.5,  0.5),
+            Vector3::new(-0.5, -0.5,  0.5),
+
+            Vector3::new(-0.5,  0.5,  0.5),
+            Vector3::new(-0.5,  0.5, -0.5),
+            Vector3::new(-0.5, -0.5, -0.5),
+            Vector3::new(-0.5, -0.5, -0.5),
+            Vector3::new(-0.5, -0.5,  0.5),
+            Vector3::new(-0.5,  0.5,  0.5),
+
+            Vector3::new( 0.5,  0.5,  0.5),
+            Vector3::new( 0.5,  0.5, -0.5),
+            Vector3::new( 0.5, -0.5, -0.5),
+            Vector3::new( 0.5, -0.5, -0.5),
+            Vector3::new( 0.5, -0.5,  0.5),
+            Vector3::new( 0.5,  0.5,  0.5),
+
+            Vector3::new(-0.5, -0.5, -0.5),
+            Vector3::new( 0.5, -0.5, -0.5),
+            Vector3::new( 0.5, -0.5,  0.5),
+            Vector3::new( 0.5, -0.5,  0.5),
+            Vector3::new(-0.5, -0.5,  0.5),
+            Vector3::new(-0.5, -0.5, -0.5),
+
+            Vector3::new(-0.5,  0.5, -0.5),
+            Vector3::new( 0.5,  0.5, -0.5),
+            Vector3::new( 0.5,  0.5,  0.5),
+            Vector3::new( 0.5,  0.5,  0.5),
+            Vector3::new(-0.5,  0.5,  0.5),
+            Vector3::new(-0.5,  0.5, -0.5),
         ];
 
         let uvs : Vec<Vector2<f32>> = vec![
+            Vector2::new(1.0, 1.0),
             Vector2::new(0.0, 0.0),
-            Vector2::new(1.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 1.0),
-            Vector2::new(1.0, 1.0)
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
         ];
 
         let norm : Vec<Vector3<f32>> = vec![
-            Vector3::new(0.0, 0.0, 1.0),
-            Vector3::new(0.0, 0.0, 1.0),
-            Vector3::new(0.0, 0.0, 1.0),
-            Vector3::new(0.0, 0.0, 1.0),
+            Vector3::new( 0.0,  0.0, -1.0),
+            Vector3::new( 0.0,  0.0, -1.0),
+            Vector3::new( 0.0,  0.0, -1.0),
+            Vector3::new( 0.0,  0.0, -1.0),
+            Vector3::new( 0.0,  0.0, -1.0),
+            Vector3::new( 0.0,  0.0, -1.0),
+
+            Vector3::new( 0.0,  0.0, 1.0),
+            Vector3::new( 0.0,  0.0, 1.0),
+            Vector3::new( 0.0,  0.0, 1.0),
+            Vector3::new( 0.0,  0.0, 1.0),
+            Vector3::new( 0.0,  0.0, 1.0),
+            Vector3::new( 0.0,  0.0, 1.0),
+
+            Vector3::new(-1.0,  0.0,  0.0),
+            Vector3::new(-1.0,  0.0,  0.0),
+            Vector3::new(-1.0,  0.0,  0.0),
+            Vector3::new(-1.0,  0.0,  0.0),
+            Vector3::new(-1.0,  0.0,  0.0),
+            Vector3::new(-1.0,  0.0,  0.0),
+
+            Vector3::new( 1.0,  0.0,  0.0),
+            Vector3::new( 1.0,  0.0,  0.0),
+            Vector3::new( 1.0,  0.0,  0.0),
+            Vector3::new( 1.0,  0.0,  0.0),
+            Vector3::new( 1.0,  0.0,  0.0),
+            Vector3::new( 1.0,  0.0,  0.0),
+
+            Vector3::new( 0.0, -1.0,  0.0),
+            Vector3::new( 0.0, -1.0,  0.0),
+            Vector3::new( 0.0, -1.0,  0.0),
+            Vector3::new( 0.0, -1.0,  0.0),
+            Vector3::new( 0.0, -1.0,  0.0),
+            Vector3::new( 0.0, -1.0,  0.0),
+
+            Vector3::new( 0.0, 1.0,  0.0),
+            Vector3::new( 0.0, 1.0,  0.0),
+            Vector3::new( 0.0, 1.0,  0.0),
+            Vector3::new( 0.0, 1.0,  0.0),
+            Vector3::new( 0.0, 1.0,  0.0),
+            Vector3::new( 0.0, 1.0,  0.0),
         ];
 
         let mut vert_vbo = VBO::new(&render_context.gl).unwrap();
@@ -52,7 +163,7 @@ fn main() -> Result<(), String> {
         norm_vbo.load_vec3s(&render_context.gl, norm);
 
         let mut vao = VAO::new(&render_context.gl).unwrap();
-        vao.addIndexBuffer(&render_context.gl, vec![0, 2, 1, 1, 2, 3]);
+        //vao.addIndexBuffer(&render_context.gl, vec![0, 2, 1, 1, 2, 3]);
         vao.add_vbo(&render_context.gl ,0, &vert_vbo);
         vao.add_vbo(&render_context.gl, 1, &uv_vbo);
         vao.add_vbo(&render_context.gl, 2, &norm_vbo);

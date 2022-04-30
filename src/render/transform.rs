@@ -5,7 +5,7 @@ use crate::render::debug::{Debugable, UIRenderType};
 use egui::{Grid, Ui};
 use cgmath::Rotation3;
 use crate::render::shader::{ShaderUniformHandler, Uniform, UniformValue};
-use crate::util::math::wrap_vec3;
+use crate::util::math::{clamp_vec3, clamp_vec3_xz, wrap_vec3};
 use crate::util::variable::UpdateVariable;
 
 #[derive(Clone)]
@@ -77,7 +77,27 @@ impl Transform {
 
     pub fn add_rot<T>(&mut self, value : T) -> &mut Self where T : Into<Vector3<f32>> {
         self.rotation += value.into();
-        wrap_vec3(self.rotation.borrow_mut(), 0.0, 360.0);
+        self.update_uniform();
+        self
+    }
+
+    pub fn add_rot_wrap<T>(&mut self, value : T, min : f32, max : f32) -> &mut Self where T : Into<Vector3<f32>> {
+        self.rotation += value.into();
+        wrap_vec3(self.rotation.borrow_mut(), min, max);
+        self.update_uniform();
+        self
+    }
+
+    pub fn add_rot_clamp<T>(&mut self, value : T, min : f32, max : f32) -> &mut Self where T : Into<Vector3<f32>> {
+        self.rotation += value.into();
+        clamp_vec3(self.rotation.borrow_mut(), min, max);
+        self.update_uniform();
+        self
+    }
+
+    pub fn add_rot_clamp_xz<T>(&mut self, value : T, min : f32, max : f32) -> &mut Self where T : Into<Vector3<f32>> {
+        self.rotation += value.into();
+        clamp_vec3_xz(self.rotation.borrow_mut(), min, max);
         self.update_uniform();
         self
     }

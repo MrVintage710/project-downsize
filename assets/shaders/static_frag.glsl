@@ -16,5 +16,5 @@ void main() {
     vec3 ambient = global_light_color * global_ambient;
     vec3 diffuse = global_difference * global_light_color;
     vec4 albeto = texture(our_texture, uv_pos);
-    frag_color = vec4((diffuse + ambient), 1.0);
+    frag_color = albeto * vec4((diffuse + ambient), 1.0);
 }

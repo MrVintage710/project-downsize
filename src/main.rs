@@ -5,20 +5,22 @@ use glow::*;
 use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
 use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
 use crate::render::buffer::{FBO, VAO};
-use glutin::event::{Event, WindowEvent};
+use glutin::event::{Event, MouseButton, WindowEvent};
 use glutin::event_loop::ControlFlow;
 use crate::render::shader::{ShaderBuilder, UniformValue};
 use std::time::{Instant, SystemTime};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
-use egui::{Align2, Color32};
+use egui::{Align2, Color32, Pos2};
 use crate::render::downsize::Downsize;
 use crate::render::lighting::GlobalLighting;
 use crate::render::shader::UniformValue::VEC3F;
+use crate::util::input::InputState;
 
 fn main() -> Result<(), String> {
     let (render_context, shader_version, event_loop, mut egui_glow) = createGlutinContext("Downsize");
+    let mut input = InputState::default();
 
     {
         let verts : Vec<Vector3<f32>> = vec![
@@ -67,42 +69,42 @@ fn main() -> Result<(), String> {
 
         let uvs : Vec<Vector2<f32>> = vec![
             Vector2::new(1.0, 1.0),
-            Vector2::new(0.0, 0.0),
-            Vector2::new(0.0, 0.0),
-            Vector2::new(0.0, 0.0),
-            Vector2::new(0.0, 1.0),
-            Vector2::new(1.0, 1.0),
-
-            Vector2::new(1.0, 1.0),
-            Vector2::new(0.0, 0.0),
+            Vector2::new(1.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 1.0),
             Vector2::new(1.0, 1.0),
 
             Vector2::new(1.0, 1.0),
-            Vector2::new(0.0, 0.0),
-            Vector2::new(0.0, 0.0),
-            Vector2::new(0.0, 0.0),
-            Vector2::new(0.0, 1.0),
-            Vector2::new(1.0, 1.0),
-
-            Vector2::new(1.0, 1.0),
-            Vector2::new(0.0, 0.0),
+            Vector2::new(1.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 1.0),
             Vector2::new(1.0, 1.0),
 
             Vector2::new(1.0, 1.0),
-            Vector2::new(0.0, 0.0),
+            Vector2::new(1.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 1.0),
             Vector2::new(1.0, 1.0),
 
             Vector2::new(1.0, 1.0),
+            Vector2::new(1.0, 0.0),
             Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(1.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 0.0),
+            Vector2::new(0.0, 1.0),
+            Vector2::new(1.0, 1.0),
+
+            Vector2::new(1.0, 1.0),
+            Vector2::new(1.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 0.0),
             Vector2::new(0.0, 1.0),
@@ -173,7 +175,8 @@ fn main() -> Result<(), String> {
         let mut transform = Transform::new();
 
         let mut camera_transform = Transform::new();
-        camera_transform.set_pos((0.0, 0.0, -1.0));
+        camera_transform.set_pos((0.0, 0.0, -2.0));
+        camera_transform.set_rot((35.264, 45.0, 0.0));
 
         let mut global_lighting = GlobalLighting::default();
 
@@ -188,7 +191,7 @@ fn main() -> Result<(), String> {
         shdr.add_multi_uniform(&mut global_lighting);
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
-        let mut should_animate = true;
+        let mut should_animate = false;
 
         let mut last_frame_end = Instant::now();
         let mut current_frame_start = last_frame_end.elapsed();
@@ -228,6 +231,7 @@ fn main() -> Result<(), String> {
                 Event::NewEvents(_) => {}
                 Event::WindowEvent { ref event, .. } => {
                     egui_glow.on_event(event);
+                    input.update_state(event, Some(egui_glow.egui_ctx.used_rect()));
                     match event {
                         WindowEvent::Resized(physical_size) => {
                             render_context.window.resize(*physical_size);
@@ -246,7 +250,7 @@ fn main() -> Result<(), String> {
                 Event::Suspended => {}
                 Event::Resumed => {}
                 Event::MainEventsCleared => {
-                    render_context.window.window().request_redraw()
+                    render_context.window.window().request_redraw();
                 }
                 Event::RedrawRequested(_) => {
                     current_frame_start = last_frame_end.elapsed();
@@ -256,8 +260,14 @@ fn main() -> Result<(), String> {
                         render_context.gl.clear(COLOR_BUFFER_BIT);
 
                         if should_animate {
-                            transform.add_rot((0.0, 0.5, 0.0));
+                            transform.add_rot_wrap((0.0, 0.5, 0.0), 0.0, 360.0);
                         }
+
+                        input.mouse.on_drag(MouseButton::Left, |x, y| {
+                            camera_transform.add_rot_clamp_xz((y, x, 0.0), -90.0, 90.0);
+                        });
+
+                        //println!("{} {}", input.mouse.dx(), input.mouse.dy());
 
                         downsize.render(&render_context.gl, render_context.window.window().inner_size(), |gl, aspect_ratio| {
                             let pers = perspective(Deg(80.0), aspect_ratio, 0.00001, 200.0);
@@ -270,6 +280,8 @@ fn main() -> Result<(), String> {
 
                         egui_glow.paint(&render_context.window, &render_context.gl, list);
                         render_context.window.swap_buffers().unwrap();
+
+                        input.update();
                     }
                 }
                 Event::RedrawEventsCleared => {}

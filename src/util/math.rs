@@ -21,3 +21,37 @@ pub fn wrap_vec3<T>(vec : &mut Vector3<T>, min : T, max : T) where T: BaseNum {
         vec.z += max
     }
 }
+
+pub fn clamp_vec3<T>(vec : &mut Vector3<T>, min : T, max : T) where T : BaseNum {
+    if vec.x > max {
+        vec.x = max
+    } else if vec.x < min {
+        vec.x = min
+    }
+
+    if vec.y > max {
+        vec.y = max
+    } else if vec.y < min {
+        vec.y = min
+    }
+
+    if vec.z > max {
+        vec.z = max
+    } else if vec.z < min {
+        vec.z = min
+    }
+}
+
+pub fn clamp_vec3_xz<T>(vec : &mut Vector3<T>, min : T, max : T) where T : BaseNum {
+    if vec.x > max {
+        vec.x = max
+    } else if vec.x < min {
+        vec.x = min
+    }
+
+    if vec.z > max {
+        vec.z = max
+    } else if vec.z < min {
+        vec.z = min
+    }
+}

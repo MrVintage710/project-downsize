@@ -4,7 +4,7 @@
 use glow::*;
 use cgmath::{Vector3, Vector2, Vector4};
 use std::any::TypeId;
-use crate::render::Renderable;
+use crate::render::{Deletable, Renderable};
 use crate::util::bitflag::{BitFlag16, BitFlag32};
 
 ///This is a functional Wrapping of a vbo. This should have all the functions required to create and manage memory in a vbo
@@ -140,10 +140,6 @@ impl VBO {
         }
     }
 
-    pub fn destroy(&self, gl : &Context) {
-        unsafe { gl.delete_buffer(self.buffer) }
-    }
-
     fn set_type<T: 'static>(&mut self) {
         let t = TypeId::of::<T>();
         if t == TypeId::of::<i32>() {
@@ -178,6 +174,12 @@ impl VBO {
     }
 }
 
+impl Deletable for VBO {
+    unsafe fn delete(&self, gl: &Context) {
+        unsafe { gl.delete_buffer(self.buffer) }
+    }
+}
+
 ///VAO implementation. This struct will store the pointer to the vao and some other
 /// information that is important for operation.
 pub struct VAO {
@@ -201,10 +203,6 @@ impl VAO {
         unsafe {
             gl.bind_vertex_array(Some(self.array));
         }
-    }
-
-    pub fn destroy(&self, gl : &Context) {
-        unsafe { gl.delete_vertex_array(self.array) }
     }
 
     pub fn add_vbo(&mut self, gl : &Context, index : u16, vbo : &VBO) {
@@ -233,6 +231,12 @@ impl VAO {
             self.element_array = true;
             self.render_count = indices.len() as u32;
         }
+    }
+}
+
+impl Deletable for VAO {
+    unsafe fn delete(&self, gl: &Context) {
+        unsafe { gl.delete_vertex_array(self.array) }
     }
 }
 

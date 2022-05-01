@@ -32,10 +32,10 @@ impl Transform {
     pub fn new<T>(pos: T, scale: T, rotation: T, origin: T)
         -> Self where T: Into<Vector3<f32>> {
         Transform {
-            pos,
-            scale,
-            rotation,
-            origin,
+            pos: pos.into(),
+            scale: scale.into(),
+            rotation: rotation.into(),
+            origin: origin.into(),
             uniform_handler: None
         }
     }

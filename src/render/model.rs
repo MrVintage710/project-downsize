@@ -43,8 +43,7 @@ impl<'a> OBJModel<'a> {
 
         let input = BufReader::new(File::open(path)?);
         let generated_model: Obj<TexturedVertex, u32> = load_obj(input)?;
-        let obj_model: OBJModel = vao_load_obj(Rc::clone(&render_context),
-                                               generated_model, shader);
+        let obj_model: OBJModel = vao_load_obj(Rc::clone(&render_context), generated_model, &shader);
         Ok(obj_model)
     }
 
@@ -53,8 +52,8 @@ impl<'a> OBJModel<'a> {
     // }
 }
 
-fn vao_load_obj(render_context: Rc<RenderContext>,
-                model: Obj<TexturedVertex, u32>, shader: &Shader) -> OBJModel {
+fn vao_load_obj<'a>(render_context: Rc<RenderContext>,
+                model: Obj<TexturedVertex, u32>, shader: &'a Shader) -> OBJModel {
     // loads the Obj textured vertex data in to respective vertices, and returns vao with
     // all data loaded in it
 

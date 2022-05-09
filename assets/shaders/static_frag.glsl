@@ -3,6 +3,7 @@ out vec4 frag_color;
 
 in vec4 out_norm;
 in vec2 uv_pos;
+in vec4 camera_forward_unit;
 
 uniform sampler2D our_texture;
 
@@ -16,5 +17,8 @@ void main() {
     vec3 ambient = global_light_color * global_ambient;
     vec3 diffuse = global_difference * global_light_color;
     vec4 albeto = texture(our_texture, uv_pos);
+
+    float orthoganality = dot(camera_forward_unit, out_norm);
+
     frag_color = albeto * vec4((diffuse + ambient), 1.0);
 }

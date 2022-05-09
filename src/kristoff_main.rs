@@ -19,9 +19,9 @@ use crate::render::shader::UniformValue::VEC3F;
 pub fn kristoff_main() -> Result<(), String> {
     let (render_context, shader_version, event_loop, mut egui_glow) = createGlutinContext("Downsize");
     let gl = &render_context.gl;
-    let file_name = "cube.obj";
+    let file_name = "dragon.obj";
 
-    // let mut transform = Transform::new();
+    let mut transform = Transform::default();
     let mut camera_transform = Transform::default();
     camera_transform.set_pos((0.0, 0.0, -1.0));
     let mut global_lighting = GlobalLighting::default();
@@ -34,14 +34,13 @@ pub fn kristoff_main() -> Result<(), String> {
         .build(&render_context).expect("Unable to create shader.");
 
     shdr.add_uniform("camera", &mut camera_transform);
-    // brooks said I don't need to add it
-    // shdr.add_uniform("transform", &mut transform);
+    shdr.add_uniform("transform", &mut transform);
     shdr.add_multi_uniform(&mut global_lighting);
 
     // CREATE MODEL
 
     let mut model =
-        OBJModel::new(render_context, file_name, &shdr).unwrap();
+        OBJModel::new(Rc::clone(&render_context), file_name, shdr).unwrap();
 
 
     let mut downsize = Downsize::new(&render_context.gl, 240);
@@ -119,14 +118,8 @@ pub fn kristoff_main() -> Result<(), String> {
                     downsize.render(&render_context.gl, render_context.window.window().inner_size(), |gl, aspect_ratio| {
                         let pers = perspective(Deg(80.0), aspect_ratio, 0.00001, 200.0);
                         model.shader.send_uniform("perspective", pers);
-                        // adding transform
                         model.shader.send_uniform("transform", model.transform.clone());
-
-                        // put in the render method of the model :)
-                        // texture.bind(&render_context.gl);
-                        // shdr.bind();
-                        // unsafe { vao.render(&render_context.gl); }
-                        unsafe { model.render(&render_context.gl); }
+                        model.render(&render_context.gl);
                     });
 
                     egui_glow.paint(&render_context.window, &render_context.gl, list);

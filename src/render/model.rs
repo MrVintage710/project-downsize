@@ -33,7 +33,7 @@ impl Renderable for OBJModel {
 }
 
 impl OBJModel {
-    pub fn new(render_context : Rc<RenderContext>, file_name : &str, shader: Shader)
+    pub fn new(render_context : &Rc<RenderContext>, file_name : &str, shader: Shader)
         -> Result<OBJModel, ObjError> {
         let gl = &render_context.gl;
         let path = Path::new("")

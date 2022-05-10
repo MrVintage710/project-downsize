@@ -15,7 +15,7 @@ void main() {
     float global_difference = max(dot(normalize(out_norm), normalize(vec4(global_light_direction, 1.0))), 0.0);
     vec3 ambient = global_light_color * global_ambient;
     vec3 diffuse = global_difference * global_light_color;
-    vec4 albeto = texture(our_texture, uv_pos);
+    vec4 albeto = vec4(1.0, 1.0, 1.0, 1.0);
 
     frag_color = albeto * vec4((diffuse + ambient), 1.0);
 }

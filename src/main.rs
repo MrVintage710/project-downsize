@@ -2,7 +2,7 @@ mod render;
 mod util;
 
 use glow::*;
-use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture};
+use crate::render::{createGlutinContext, buffer::VBO, Renderable, texture::Texture, Deletable};
 use cgmath::{Vector3, Vector2, Matrix4, SquareMatrix, Rad, Deg, perspective};
 use crate::render::buffer::{FBO, VAO};
 use glutin::event::{Event, MouseButton, WindowEvent};
@@ -15,6 +15,7 @@ use crate::render::transform::Transform;
 use egui::{Align2, Color32, Pos2};
 use crate::render::downsize::Downsize;
 use crate::render::lighting::GlobalLighting;
+use crate::render::model::OBJModel;
 use crate::render::shader::UniformValue::VEC3F;
 use crate::util::input::InputState;
 
@@ -155,27 +156,27 @@ fn main() -> Result<(), String> {
             Vector3::new( 0.0, 1.0,  0.0),
         ];
 
-        let mut vert_vbo = VBO::new(&render_context.gl).unwrap();
-        vert_vbo.load_vec3s(&render_context.gl, verts);
-
-        let mut uv_vbo = VBO::new(&render_context.gl)?;
-        uv_vbo.load_vec2s(&render_context.gl, uvs);
-
-        let mut norm_vbo = VBO::new(&render_context.gl)?;
-        norm_vbo.load_vec3s(&render_context.gl, norm);
-
-        let mut vao = VAO::new(&render_context.gl).unwrap();
-        //vao.addIndexBuffer(&render_context.gl, vec![0, 2, 1, 1, 2, 3]);
-        vao.add_vbo(&render_context.gl ,0, &vert_vbo);
-        vao.add_vbo(&render_context.gl, 1, &uv_vbo);
-        vao.add_vbo(&render_context.gl, 2, &norm_vbo);
+        // let mut vert_vbo = VBO::new(&render_context.gl).unwrap();
+        // vert_vbo.load_vec3s(&render_context.gl, verts);
+        //
+        // let mut uv_vbo = VBO::new(&render_context.gl)?;
+        // uv_vbo.load_vec2s(&render_context.gl, uvs);
+        //
+        // let mut norm_vbo = VBO::new(&render_context.gl)?;
+        // norm_vbo.load_vec3s(&render_context.gl, norm);
+        //
+        // let mut vao = VAO::new(&render_context.gl).unwrap();
+        // //vao.addIndexBuffer(&render_context.gl, vec![0, 2, 1, 1, 2, 3]);
+        // vao.add_vbo(&render_context.gl ,0, &vert_vbo);
+        // vao.add_vbo(&render_context.gl, 1, &uv_vbo);
+        // vao.add_vbo(&render_context.gl, 2, &norm_vbo);
 
         let texture = Texture::new(&render_context.gl, "copper_block.png");
 
-        let mut transform = Transform::new();
+        let mut transform = Transform::default();
 
-        let mut camera_transform = Transform::new();
-        camera_transform.set_pos((0.0, 0.0, -2.0));
+        let mut camera_transform = Transform::default();
+        camera_transform.set_pos((0.0, 0.0, -3.0));
         camera_transform.set_rot((35.264, 45.0, 0.0));
 
         let mut global_lighting = GlobalLighting::default();
@@ -189,6 +190,8 @@ fn main() -> Result<(), String> {
         shdr.add_uniform("camera", &mut camera_transform);
         shdr.add_uniform("transform", &mut transform);
         shdr.add_multi_uniform(&mut global_lighting);
+
+        let model = OBJModel::new(&render_context, "sphere.obj", shdr).expect("Could not load model");
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
         let mut should_animate = false;
@@ -267,15 +270,19 @@ fn main() -> Result<(), String> {
                             camera_transform.add_rot_clamp_xz((y, x, 0.0), -90.0, 90.0);
                         });
 
+                        input.mouse.on_scroll(|x, y| {
+                            camera_transform.add_pos((0.0, 0.0, x));
+                        });
+
                         //println!("{} {}", input.mouse.dx(), input.mouse.dy());
 
                         downsize.render(&render_context.gl, render_context.window.window().inner_size(), |gl, aspect_ratio| {
                             let pers = perspective(Deg(80.0), aspect_ratio, 0.00001, 200.0);
-                            shdr.send_uniform("perspective", pers);
-
+                            model.shader.send_uniform("perspective", pers);
+                            model.shader.send_uniform("transform", transform.clone());
                             texture.bind(&render_context.gl);
-                            shdr.bind();
-                            unsafe { vao.render(&render_context.gl); }
+                            // shdr.bind();
+                            model.render(&render_context.gl)
                         });
 
                         egui_glow.paint(&render_context.window, &render_context.gl, list);
@@ -287,11 +294,12 @@ fn main() -> Result<(), String> {
                 Event::RedrawEventsCleared => {}
                 Event::LoopDestroyed => {
                     egui_glow.destroy(&render_context.gl);
-                    vao.destroy(&render_context.gl);
-                    vert_vbo.destroy(&render_context.gl);
-                    uv_vbo.destroy(&render_context.gl);
+                    //vao.destroy(&render_context.gl);
+                    //vert_vbo.destroy(&render_context.gl);
+                    //uv_vbo.destroy(&render_context.gl);
                     downsize.delete(&render_context.gl);
-                    shdr.delete();
+                    unsafe { model.delete(&render_context.gl) }
+                    //unsafe { shdr.delete(&render_context.gl); }
                 }
             }
         });

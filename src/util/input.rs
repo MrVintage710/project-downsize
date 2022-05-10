@@ -1,6 +1,7 @@
 use egui::{Pos2, Rect};
 use glutin::dpi::PhysicalPosition;
-use glutin::event::{DeviceId, ElementState, ModifiersState, MouseButton, WindowEvent};
+use glutin::event::{DeviceId, ElementState, ModifiersState, MouseButton, MouseScrollDelta, TouchPhase, WindowEvent};
+use glutin::event::MouseScrollDelta::LineDelta;
 
 pub struct InputState {
     pub mouse : MouseState
@@ -28,7 +29,15 @@ impl InputState {
                 self.mouse.handle_mouse_movement(position, modifiers),
             WindowEvent::CursorEntered { .. } => {}
             WindowEvent::CursorLeft { .. } => {}
-            WindowEvent::MouseWheel { .. } => {}
+            WindowEvent::MouseWheel { device_id, delta, phase, modifiers } => {
+                if let Some(rect) = dead_zone {
+                    if !self.mouse.is_in(rect) {
+                        self.mouse.handle_mouse_scroll(delta, phase)
+                    }
+                } else {
+                    self.mouse.handle_mouse_scroll(delta, phase)
+                }
+            }
             WindowEvent::MouseInput { device_id, state, button, modifiers } => {
                 if let Some(rect) = dead_zone {
                     if !self.mouse.is_in(rect) {
@@ -65,7 +74,9 @@ pub struct MouseState {
     x : f32,
     y : f32,
     dx : f32,
-    dy : f32
+    dy : f32,
+    scroll_dx : f32,
+    scroll_dy : f32,
 }
 
 impl MouseState {
@@ -76,9 +87,12 @@ impl MouseState {
 
         self.dx = 0.0;
         self.dy = 0.0;
+
+        self.scroll_dx = 0.0;
+        self.scroll_dy = 0.0;
     }
 
-    pub fn handle_mouse_state(&mut self, state : &ElementState, button : &MouseButton, modifiers : &ModifiersState) {
+    fn handle_mouse_state(&mut self, state : &ElementState, button : &MouseButton, modifiers : &ModifiersState) {
         match button {
             MouseButton::Left => {
                 match state {
@@ -131,6 +145,13 @@ impl MouseState {
         self.y = y;
     }
 
+    pub fn handle_mouse_scroll(&mut self, delta: &MouseScrollDelta, phase: &TouchPhase) {
+        if let LineDelta(x, y) = delta {
+            self.scroll_dx = *x;
+            self.scroll_dy = *y;
+        }
+    }
+
     pub fn is_button_down(&self, button : MouseButton) -> bool {
         match button {
             MouseButton::Left => self.is_left_down,
@@ -178,6 +199,12 @@ impl MouseState {
             callback(self.dx, self.dy)
         }
     }
+
+    pub fn on_scroll(&self, callback : impl FnOnce(f32, f32)) {
+        if self.scroll_dx != 0.0 || self.scroll_dy != 0.0 {
+            callback(self.scroll_dx, self.scroll_dy)
+        }
+    }
 }
 
 impl Default for MouseState {
@@ -192,7 +219,9 @@ impl Default for MouseState {
             x: 0.0,
             y: 0.0,
             dx: 0.0,
-            dy: 0.0
+            dy: 0.0,
+            scroll_dx: 0.0,
+            scroll_dy: 0.0
         }
     }
 }

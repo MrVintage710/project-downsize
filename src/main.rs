@@ -271,7 +271,7 @@ fn main() -> Result<(), String> {
                         });
 
                         input.mouse.on_scroll(|x, y| {
-                            camera_transform.add_pos((0.0, 0.0, x));
+                            camera_transform.add_pos((0.0, 0.0, y));
                         });
 
                         //println!("{} {}", input.mouse.dx(), input.mouse.dy());

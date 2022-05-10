@@ -15,7 +15,7 @@ use crate::render::transform::Transform;
 use glsl::parser::{Parse as _, ParseError};
 use glsl::syntax::{Declaration, ExternalDeclaration, ShaderStage, StorageQualifier, TypeQualifierSpec};
 use glsl::syntax::Declaration::InitDeclaratorList;
-use crate::render::RenderContext;
+use crate::render::{Deletable, RenderContext};
 
 const VERTEX_SHADER_INDEX : usize = 0;
 const FRAGMENT_SHADER_INDEX : usize = 1;
@@ -244,7 +244,7 @@ impl Shader {
         });
     }
 
-    pub fn send_uniform(&mut self, uniform_name : &str, value : impl Into<UniformValue>) -> ShaderResult<()>{
+    pub fn send_uniform(&self, uniform_name : &str, value : impl Into<UniformValue>) -> ShaderResult<()>{
         let uniform_location = self.get_uniform_location(uniform_name)?;
         send_uniforms(&self.render_context.gl, value, self.program, uniform_location);
         Ok(())
@@ -260,16 +260,16 @@ impl Shader {
         }
     }
 
-    pub fn delete(&self) {
-        unsafe {
-            let gl = &self.render_context.gl;
-            gl.delete_shader(self.vert_shader);
-            gl.delete_shader(self.frag_shader);
-            if self.geo_shader.is_some() { gl.delete_shader(self.geo_shader.unwrap())}
-            if self.tes_shader.is_some() { gl.delete_shader(self.tes_shader.unwrap())}
-            gl.delete_program(self.program);
-        }
-    }
+    // pub fn destory(&self) {
+    //     unsafe {
+    //         let gl = &self.render_context.gl;
+    //         gl.delete_shader(self.vert_shader);
+    //         gl.delete_shader(self.frag_shader);
+    //         if self.geo_shader.is_some() { gl.delete_shader(self.geo_shader.unwrap())}
+    //         if self.tes_shader.is_some() { gl.delete_shader(self.tes_shader.unwrap())}
+    //         gl.delete_program(self.program);
+    //     }
+    // }
 
     fn get_uniform_location(&self, uniform_name : &str) -> ShaderResult<NativeUniformLocation>{
         unsafe {
@@ -294,6 +294,16 @@ pub enum ShaderError {
     GLSL_COMPILE_ERROR(String),
     UNIFORM_ALREADY_EXISTS,
     UNIFORM_LOCATION_NOT_FOUND
+}
+
+impl Deletable for Shader {
+    unsafe fn delete(&self, gl: &Context) {
+        gl.delete_program(self.program);
+        gl.delete_shader(self.vert_shader);
+        gl.delete_shader(self.frag_shader);
+        if self.geo_shader.is_some() { gl.delete_shader(self.geo_shader.unwrap())}
+        if self.tes_shader.is_some() { gl.delete_shader(self.tes_shader.unwrap())}
+    }
 }
 
 #[derive(Clone)]

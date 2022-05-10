@@ -38,10 +38,8 @@ pub fn kristoff_main() -> Result<(), String> {
     shdr.add_multi_uniform(&mut global_lighting);
 
     // CREATE MODEL
-
     let mut model =
         OBJModel::new(Rc::clone(&render_context), file_name, shdr).unwrap();
-
 
     let mut downsize = Downsize::new(&render_context.gl, 240);
     let mut should_animate = true;

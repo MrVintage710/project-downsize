@@ -1,14 +1,13 @@
 use std::borrow::Borrow;
 use crate::render::buffer::{VBO, VAO};
 use glow::Context;
-
 use std::fs::File;
+use std::io;
 use std::io::BufReader;
-
 use std::path::{Path, PathBuf};
 use std::rc::Rc;
 use cgmath::{Vector2, Vector3};
-use obj::{load_obj, Obj, ObjError, TexturedVertex, Vertex};
+use obj::{FromRawVertex, load_obj, Obj, ObjError, ObjResult, TexturedVertex, Vertex};
 use crate::render::shader::Shader;
 use crate::render::texture::Texture;
 use crate::{Renderable, ShaderBuilder, Transform};
@@ -41,24 +40,27 @@ impl OBJModel {
             .join("models")
             .join(file_name);
 
-        let input = BufReader::new(File::open(path)?);
-        let generated_model: Obj<Vertex, u32> = load_obj(input)?;
-        let obj_model: OBJModel = vao_load_obj_vertex(Rc::clone(&render_context),
-                                               generated_model, shader);
-        Ok(obj_model)
-    }
+        let input = BufReader::new(File::open(path.clone())?);
 
-    // pub fn update_uniforms(&mut self, gl: &Context) {
-    //     self.shader.update_uniforms(&gl);
-    // }
+        // attempt to load obj with textured vertex data
+        // if there is a load error, attempt to load obj without textured vertex data
+        let model: ObjResult<Obj<TexturedVertex, u32>> = load_obj(input);
+        if let Err(ObjError::Load(e)) = model{
+            let input = BufReader::new(File::open(path.clone())?);
+            let model: ObjResult<Obj<Vertex, u32>> = load_obj(input);
+            let obj_model: OBJModel =
+                vao_load_obj_vertex(Rc::clone(&render_context),model.unwrap(), shader);
+            Ok(obj_model)
+        } else {
+            let obj_model: OBJModel =
+                vao_load_obj_textured_vertex(Rc::clone(&render_context),model.unwrap(), shader);
+            Ok(obj_model)
+        }
+    }
 }
 
-fn vao_load_obj_vertex(render_context: Rc<RenderContext>,
-                model: Obj<Vertex, u32>, shader: Shader) -> OBJModel {
-    // loads the Obj textured vertex data in to respective vertices, and returns vao with
-    // all data loaded in it
-
-    // vertexes
+fn vao_load_obj_vertex(render_context: Rc<RenderContext>, model: Obj<Vertex, u32>, shader: Shader) -> OBJModel {
+    // load vertexes into vert_vbo
     let gl = &render_context.gl;
     let mut vert_vbo = VBO::new(gl).unwrap();
     let verts: Vec<Vector3<f32>> = model.vertices.iter()
@@ -69,7 +71,8 @@ fn vao_load_obj_vertex(render_context: Rc<RenderContext>,
                 tv.position[2]))
         .collect();
     vert_vbo.load_vec3s(gl, verts);
-    // uv
+
+    // load uvs into uv_vbo
     let mut uv_vbo = VBO::new(gl).unwrap();
     let uvs: Vec<Vector2<f32>> = model.vertices.iter()
         .map(|tv|
@@ -79,7 +82,8 @@ fn vao_load_obj_vertex(render_context: Rc<RenderContext>,
             ))
         .collect();
     uv_vbo.load_vec2s(gl, uvs);
-    // norms
+
+    // load norms into norms_vbo
     let mut norm_vbo = VBO::new(gl).unwrap();
     let norms: Vec<Vector3<f32>> = model.vertices.iter()
         .map(|tv|
@@ -90,31 +94,20 @@ fn vao_load_obj_vertex(render_context: Rc<RenderContext>,
         .collect();
     norm_vbo.load_vec3s(gl, norms);
 
-    // Create VAO, add VBOs to VAO
-    let mut vao = VAO::new(gl).unwrap();
-
-    // todo!() index buffer
-    let i32_indices: Vec<i32> = model.indices.iter()
+    // load indices from model and convert them to i32
+    let indices: Vec<i32> = model.indices.iter()
         .map(|number| *number as i32)
         .collect();
 
-    vao.addIndexBuffer(gl, i32_indices);
-
+    // Create VAO, add VBOs and indices to VAO
+    let mut vao = VAO::new(gl).unwrap();
+    vao.addIndexBuffer(gl, indices);
     vao.add_vbo(gl, 0, &vert_vbo);
     vao.add_vbo(gl, 1, &uv_vbo);
     vao.add_vbo(gl, 2, &norm_vbo);
 
-    let transform: Transform = Transform::default();
-
-    // Create texture
     let texture = Texture::new(gl, "copper_block.png");
-
-    // TODO: need to write generic shader code to allow user to define specific components
-    // on a shader, as opposed to just a default shader
-    // let mut shader = ShaderBuilder::new()
-    //     .with_frag_shader("static_vert.glsl")
-    //     .with_vert_shader("static_frag.glsl")
-    //     .build(render_context).expect("Unable to create shader");
+    let transform: Transform = Transform::default();
 
     OBJModel {
         texture: Some(texture),
@@ -126,13 +119,8 @@ fn vao_load_obj_vertex(render_context: Rc<RenderContext>,
         transform,
     }
 }
-
-fn vao_load_obj(render_context: Rc<RenderContext>,
-                model: Obj<TexturedVertex, u32>, shader: Shader) -> OBJModel {
-    // loads the Obj textured vertex data in to respective vertices, and returns vao with
-    // all data loaded in it
-
-    // vertexes
+fn vao_load_obj_textured_vertex(render_context: Rc<RenderContext>, model: Obj<TexturedVertex, u32>, shader: Shader) -> OBJModel {
+    // load vertexes into vert_vbo
     let gl = &render_context.gl;
     let mut vert_vbo = VBO::new(gl).unwrap();
     let verts: Vec<Vector3<f32>> = model.vertices.iter()
@@ -143,7 +131,8 @@ fn vao_load_obj(render_context: Rc<RenderContext>,
                 tv.position[2]))
         .collect();
     vert_vbo.load_vec3s(gl, verts);
-    // uv
+
+    // load uvs into uv_vbo
     let mut uv_vbo = VBO::new(gl).unwrap();
     let uvs: Vec<Vector2<f32>> = model.vertices.iter()
         .map(|tv|
@@ -153,7 +142,8 @@ fn vao_load_obj(render_context: Rc<RenderContext>,
             ))
         .collect();
     uv_vbo.load_vec2s(gl, uvs);
-    // norms
+
+    // load norms into norms_vbo
     let mut norm_vbo = VBO::new(gl).unwrap();
     let norms: Vec<Vector3<f32>> = model.vertices.iter()
         .map(|tv|
@@ -164,31 +154,20 @@ fn vao_load_obj(render_context: Rc<RenderContext>,
         .collect();
     norm_vbo.load_vec3s(gl, norms);
 
-    // Create VAO, add VBOs to VAO
-    let mut vao = VAO::new(gl).unwrap();
-
-    // todo!() index buffer
-    let i32_indices: Vec<i32> = model.indices.iter()
+    // load indices from model and convert them to i32
+    let indices: Vec<i32> = model.indices.iter()
         .map(|number| *number as i32)
         .collect();
 
-    vao.addIndexBuffer(gl, i32_indices);
-
+    // Create VAO, add VBOs and indices to VAO
+    let mut vao = VAO::new(gl).unwrap();
+    vao.addIndexBuffer(gl, indices);
     vao.add_vbo(gl, 0, &vert_vbo);
     vao.add_vbo(gl, 1, &uv_vbo);
     vao.add_vbo(gl, 2, &norm_vbo);
 
-    let transform: Transform = Transform::default();
-
-    // Create texture
     let texture = Texture::new(gl, "copper_block.png");
-
-    // TODO: need to write generic shader code to allow user to define specific components
-    // on a shader, as opposed to just a default shader
-    // let mut shader = ShaderBuilder::new()
-    //     .with_frag_shader("static_vert.glsl")
-    //     .with_vert_shader("static_frag.glsl")
-    //     .build(render_context).expect("Unable to create shader");
+    let transform: Transform = Transform::default();
 
     OBJModel {
         texture: Some(texture),
@@ -209,6 +188,3 @@ impl Deletable for OBJModel {
         self.shader.delete(&gl);
     }
 }
-
-// try to load model: pos, norms, verts
-// then if you can't do that load pos and norm

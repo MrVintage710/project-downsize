@@ -191,7 +191,7 @@ fn main() -> Result<(), String> {
         shdr.add_uniform("transform", &mut transform);
         shdr.add_multi_uniform(&mut global_lighting);
 
-        let model = OBJModel::new(&render_context, "sphere.obj", shdr).expect("Could not load model");
+        let model = OBJModel::new(&render_context, "icosphere.obj", shdr).expect("Could not load model");
 
         let mut downsize = Downsize::new(&render_context.gl, 240);
         let mut should_animate = false;
@@ -238,7 +238,8 @@ fn main() -> Result<(), String> {
                 Event::NewEvents(_) => {}
                 Event::WindowEvent { ref event, .. } => {
                     egui_glow.on_event(event);
-                    input.update_state(event, Some(egui_glow.egui_ctx.available_rect()));
+                    input.update_state(event, None);
+                    // input.update_state(event, Some(egui_glow.egui_ctx.available_rect()));
                     match event {
                         WindowEvent::Resized(physical_size) => {
                             render_context.window.resize(*physical_size);

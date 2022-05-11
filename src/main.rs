@@ -12,7 +12,7 @@ use std::time::{Instant, SystemTime};
 use crate::render::debug::{Debugable, UIRenderType};
 use crate::render::debug::UIRenderType::*;
 use crate::render::transform::Transform;
-use egui::{Align2, Color32, Pos2};
+use egui::{Align2, Color32, Pos2, DragValue};
 use crate::render::downsize::Downsize;
 use crate::render::lighting::GlobalLighting;
 use crate::render::model::OBJModel;
@@ -198,6 +198,7 @@ fn main() -> Result<(), String> {
 
         let mut last_frame_end = Instant::now();
         let mut current_frame_start = last_frame_end.elapsed();
+        let mut number_of_bands = 4.0;
 
         event_loop.run(move |event, test, control_flow| {
             let (test, list) = egui_glow.run(render_context.window.window(), |egui_ctx| {
@@ -224,7 +225,10 @@ fn main() -> Result<(), String> {
                         transform.debug(ui, true);
                     });
                     global_lighting.debug(ui, true);
-
+                    ui.horizontal(|ui| {
+                        ui.label("Number of Bands:");
+                        ui.add(DragValue::new(&mut number_of_bands).speed(1.0).clamp_range(1.0..=100.0))
+                    });
                     ui.separator();
                     ui.checkbox(&mut should_animate, "Should Animate")
                 });
@@ -234,7 +238,7 @@ fn main() -> Result<(), String> {
                 Event::NewEvents(_) => {}
                 Event::WindowEvent { ref event, .. } => {
                     egui_glow.on_event(event);
-                    input.update_state(event, Some(egui_glow.egui_ctx.used_rect()));
+                    input.update_state(event, Some(egui_glow.egui_ctx.available_rect()));
                     match event {
                         WindowEvent::Resized(physical_size) => {
                             render_context.window.resize(*physical_size);
@@ -280,6 +284,7 @@ fn main() -> Result<(), String> {
                             let pers = perspective(Deg(80.0), aspect_ratio, 0.00001, 200.0);
                             model.shader.send_uniform("perspective", pers);
                             model.shader.send_uniform("transform", transform.clone());
+                            model.shader.send_uniform("level_amout", number_of_bands);
                             texture.bind(&render_context.gl);
                             // shdr.bind();
                             model.render(&render_context.gl)

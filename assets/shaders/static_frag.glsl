@@ -11,7 +11,7 @@ uniform vec3 global_light_color;
 uniform vec3 global_light_direction;
 uniform float global_ambient;
 
-const float level_amout = 4.0;
+uniform float level_amout = 4.0;
 
 void main() {
     float global_difference = max(dot(normalize(out_norm), normalize(vec4(global_light_direction, 1.0))), 0.0);

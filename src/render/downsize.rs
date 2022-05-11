@@ -80,7 +80,7 @@ impl Downsize {
 
         if new_size.width != self.last_width || new_size.height != self.last_height || self.should_recalc {
             unsafe {
-                println!("RECALCULATING TEXTURE! {}", new_height);
+                //println!("RECALCULATING TEXTURE! {}", new_height);
                 gl.bind_texture(TEXTURE_2D, Some(self.color_attachment));
                 gl.tex_image_2d(TEXTURE_2D, 0, SRGB as i32, new_width as i32, new_height as i32, 0, RGB, UNSIGNED_BYTE, None);
                 gl.bind_texture(TEXTURE_2D, Some(self.depth_attachment));

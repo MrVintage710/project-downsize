@@ -338,7 +338,9 @@ fn send_uniforms(gl : &Context, uniform_value : impl Into<UniformValue>, program
             INT(value) => {
                 gl.uniform_1_i32(Some(location.borrow()), value);
             }
-            U_INT(_) => {}
+            U_INT(value) => {
+                gl.uniform_1_u32(Some(location.borrow()), value);
+            }
             VEC4F(value) => {
                 gl.uniform_4_f32(Some(location.borrow()), value.x, value.y, value.z, value.w);
             }

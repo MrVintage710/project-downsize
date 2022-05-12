@@ -14,7 +14,8 @@ pub struct Downsize {
     fbo : NativeFramebuffer,
     color_attachment : NativeTexture,
     depth_attachment : NativeTexture,
-    should_recalc : bool
+    should_recalc : bool,
+    regular_render : bool
 }
 
 impl Downsize {
@@ -49,7 +50,8 @@ impl Downsize {
                 fbo,
                 color_attachment,
                 depth_attachment,
-                should_recalc : false
+                should_recalc : false,
+                regular_render : false
             }
         }
     }
@@ -60,16 +62,21 @@ impl Downsize {
             if self.pixel_density > size.height { self.pixel_density = size.height}
             let (width, height, aspect_ratio) = self.calc_texture_size(gl, size);
 
-            gl.bind_framebuffer(FRAMEBUFFER, Some(self.fbo));
-            gl.viewport(0, 0, width as i32, height as i32);
-            gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
+            if !self.regular_render {
+                gl.bind_framebuffer(FRAMEBUFFER, Some(self.fbo));
+                gl.viewport(0, 0, width as i32, height as i32);
+                gl.clear(glow::COLOR_BUFFER_BIT | glow::DEPTH_BUFFER_BIT);
 
-            renderCallback(gl, aspect_ratio);
+                renderCallback(gl, aspect_ratio);
 
-            gl.bind_framebuffer(FRAMEBUFFER, None);
-            gl.bind_framebuffer(READ_FRAMEBUFFER, Some(self.fbo));
-            gl.bind_framebuffer(DRAW_FRAMEBUFFER, None);
-            gl.blit_framebuffer(0, 0, width as i32, height as i32, 0, 0, size.width as i32, size.height as i32, COLOR_BUFFER_BIT, NEAREST);
+                gl.bind_framebuffer(FRAMEBUFFER, None);
+                gl.bind_framebuffer(READ_FRAMEBUFFER, Some(self.fbo));
+                gl.bind_framebuffer(DRAW_FRAMEBUFFER, None);
+                gl.blit_framebuffer(0, 0, width as i32, height as i32, 0, 0, size.width as i32, size.height as i32, COLOR_BUFFER_BIT, NEAREST);
+                gl.bind_framebuffer(READ_FRAMEBUFFER, None);
+            } else {
+                renderCallback(gl, aspect_ratio);
+            }
         }
     }
 
@@ -101,9 +108,12 @@ impl Downsize {
 
 impl Debugable for Downsize {
     fn debug(&mut self, ui: &mut Ui, enabled: bool) -> bool {
-        let res = ui.add(DragValue::new(&mut self.pixel_density)).changed();
-        if res {self.should_recalc = true};
-        res
+        ui.horizontal(|ui| {
+            let res = ui.add(DragValue::new(&mut self.pixel_density)).changed();
+            if res {self.should_recalc = true};
+            let toggle_changed = ui.checkbox(&mut self.regular_render, "").changed();
+            res || toggle_changed
+        }).inner
     }
     // fn debug(&mut self, ui: &mut Ui, render_type: &UIRenderType) {
     //     let begining = self.pixel_density;

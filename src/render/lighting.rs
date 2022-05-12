@@ -84,14 +84,27 @@ impl MultiUniform for GlobalLighting {
 
 impl Debugable for GlobalLighting {
     fn debug(&mut self, ui: &mut Ui, enabled: bool) -> bool {
-        let color_changed = debug_colorRBG(ui, enabled, &mut self.color);
-        if color_changed {println!("Changed!"); self.update_color_to_shader()}
+        let mut color_changed = false;
+        let mut dir_changed = false;
+        let mut ambient_changed = false;
 
-        let ambient_changed = ui.add(DragValue::new(&mut self.ambient).speed(0.005).clamp_range(0.01..=1.0)).changed();
-        if ambient_changed {self.update_ambient_to_shader()}
+        ui.horizontal(|ui| {
+            ui.label("Lighting Color:");
+            color_changed = debug_colorRBG(ui, enabled, &mut self.color);
+            if color_changed {self.update_color_to_shader()}
+        });
 
-        let dir_changed = self.direction.debug(ui, enabled);
-        if dir_changed {self.update_dir_to_shader()}
+        ui.horizontal(|ui| {
+            ui.label("Global Light Rotation");
+            dir_changed = self.direction.debug(ui, enabled);
+            if dir_changed {self.update_dir_to_shader()}
+        });
+
+        ui.horizontal(|ui| {
+            ui.label("Global Light Ambient:");
+            ambient_changed = ui.add(DragValue::new(&mut self.ambient).speed(0.005).clamp_range(0.01..=1.0)).changed();
+            if ambient_changed {self.update_ambient_to_shader()}
+        });
 
         color_changed || ambient_changed || dir_changed
     }
